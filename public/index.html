@@ -1,0 +1,3754 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PostCraft AI - LinkedIn Content Generator</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html {
+            overflow-y: auto;
+            scrollbar-width: none; /* Firefox */
+            scroll-behavior: smooth;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        /* Performance Optimizations */
+        * {
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        /* Hide scrollbar for webkit browsers */
+        ::-webkit-scrollbar {
+            display: none;
+        }
+
+        /* Hide scrollbar for IE, Edge and Firefox */
+        html {
+            -ms-overflow-style: none;  /* IE and Edge */
+            scrollbar-width: none;  /* Firefox */
+        }
+
+        /* Reduce motion for better performance */
+        @media (prefers-reduced-motion: reduce) {
+            * {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+            }
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 25%, #334155 50%, #475569 75%, #64748b 100%);
+            background-attachment: fixed;
+            color: #ffffff;
+            min-height: 100vh;
+            overflow-x: hidden;
+            position: relative;
+            margin: 0;
+            padding: 0;
+            /* Performance optimizations */
+            transform: translateZ(0);
+            -webkit-transform: translateZ(0);
+            will-change: scroll-position;
+        }
+
+        /* Background Orbs similar to Comet */
+        body::before {
+            content: '';
+            position: fixed;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: 
+                radial-gradient(circle at 20% 80%, rgba(120, 119, 198, 0.3) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(255, 119, 48, 0.3) 0%, transparent 50%),
+                radial-gradient(circle at 40% 40%, rgba(120, 119, 198, 0.2) 0%, transparent 50%);
+            z-index: -1;
+            animation: backgroundFloat 20s ease-in-out infinite;
+        }
+
+        @keyframes backgroundFloat {
+            0%, 100% { transform: rotate(0deg) scale(1); }
+            50% { transform: rotate(180deg) scale(1.1); }
+        }
+
+        /* Decorative orbs similar to Comet browser */
+        .shape {
+            position: fixed;
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 1;
+            filter: blur(40px);
+        }
+
+        .shape-1 {
+            width: 600px;
+            height: 600px;
+            background: radial-gradient(circle, rgba(120, 119, 198, 0.4) 0%, rgba(120, 119, 198, 0.1) 40%, transparent 70%);
+            top: -300px;
+            left: -300px;
+            animation: orb1Float 25s ease-in-out infinite;
+        }
+
+        .shape-2 {
+            width: 500px;
+            height: 500px;
+            background: radial-gradient(circle, rgba(255, 119, 48, 0.4) 0%, rgba(255, 119, 48, 0.1) 40%, transparent 70%);
+            top: -250px;
+            right: -250px;
+            animation: orb2Float 30s ease-in-out infinite reverse;
+        }
+
+        .shape-3 {
+            width: 400px;
+            height: 400px;
+            background: radial-gradient(circle, rgba(34, 197, 94, 0.3) 0%, rgba(34, 197, 94, 0.1) 40%, transparent 70%);
+            bottom: -200px;
+            left: 50%;
+            transform: translateX(-50%);
+            animation: orb3Float 20s ease-in-out infinite;
+        }
+
+        .shape-4 {
+            width: 350px;
+            height: 350px;
+            background: radial-gradient(circle, rgba(168, 85, 247, 0.3) 0%, rgba(168, 85, 247, 0.1) 40%, transparent 70%);
+            top: 60%;
+            right: -175px;
+            animation: orb4Float 35s ease-in-out infinite;
+        }
+
+        @keyframes orb1Float {
+            0%, 100% { transform: translate(0, 0) scale(1); }
+            25% { transform: translate(50px, -30px) scale(1.1); }
+            50% { transform: translate(100px, 20px) scale(0.9); }
+            75% { transform: translate(30px, 50px) scale(1.05); }
+        }
+
+        @keyframes orb2Float {
+            0%, 100% { transform: translate(0, 0) scale(1); }
+            33% { transform: translate(-40px, 60px) scale(1.2); }
+            66% { transform: translate(-80px, -20px) scale(0.8); }
+        }
+
+        @keyframes orb3Float {
+            0%, 100% { transform: translateX(-50%) translateY(0) scale(1); }
+            50% { transform: translateX(-50%) translateY(-40px) scale(1.1); }
+        }
+
+        @keyframes orb4Float {
+            0%, 100% { transform: translate(0, 0) scale(1); }
+            25% { transform: translate(-60px, -40px) scale(0.9); }
+            50% { transform: translate(-30px, 30px) scale(1.15); }
+            75% { transform: translate(-90px, 10px) scale(0.95); }
+        }
+
+        /* Spectacular Intro Page Styles */
+        .intro-page {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100vh;
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 25%, #334155 50%, #475569 75%, #64748b 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            overflow: hidden;
+            animation: introPageExit 0.8s ease 2.5s forwards;
+        }
+
+        .intro-page::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: 
+                radial-gradient(circle at 20% 80%, rgba(120, 119, 198, 0.3) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(255, 119, 48, 0.3) 0%, transparent 50%);
+            z-index: -1;
+        }
+
+        @keyframes introPageExit {
+            0% { opacity: 1; transform: scale(1); }
+            100% { opacity: 0; transform: scale(1.05); visibility: hidden; }
+        }
+
+        /* Animated Background Particles */
+        .particles-container {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+        }
+
+        .particle {
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            background: rgba(255, 255, 255, 0.6);
+            border-radius: 50%;
+            animation: particleFloat 8s linear infinite;
+        }
+
+        .particle:nth-child(1) { left: 20%; animation-delay: 0s; animation-duration: 4s; }
+        .particle:nth-child(2) { left: 50%; animation-delay: 1s; animation-duration: 5s; }
+        .particle:nth-child(3) { left: 80%; animation-delay: 2s; animation-duration: 4.5s; }
+
+        @keyframes particleFloat {
+            0% { 
+                transform: translateY(100vh) rotate(0deg);
+                opacity: 0;
+            }
+            10% { opacity: 1; }
+            90% { opacity: 1; }
+            100% { 
+                transform: translateY(-100px) rotate(360deg);
+                opacity: 0;
+            }
+        }
+
+
+
+        /* Main Intro Content */
+        .intro-content {
+            text-align: center;
+            position: relative;
+            z-index: 10;
+        }
+
+        /* Logo Container with Rings */
+        .intro-logo-container {
+            position: relative;
+            margin-bottom: 2rem;
+            animation: logoEntrance 0.8s ease 0.2s both;
+        }
+
+        @keyframes logoEntrance {
+            0% { 
+                opacity: 0; 
+                transform: scale(0.8);
+            }
+            100% { 
+                opacity: 1; 
+                transform: scale(1);
+            }
+        }
+
+        .logo-backdrop {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 200px;
+            height: 200px;
+            background: radial-gradient(circle, rgba(6, 182, 212, 0.2), transparent);
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            animation: backdropPulse 3s ease-in-out infinite;
+        }
+
+        @keyframes backdropPulse {
+            0%, 100% { transform: translate(-50%, -50%) scale(1); opacity: 0.2; }
+            50% { transform: translate(-50%, -50%) scale(1.2); opacity: 0.4; }
+        }
+
+        .intro-logo-image {
+            height: 150px;
+            width: auto;
+            filter: drop-shadow(0 8px 16px rgba(0, 0, 0, 0.4));
+            animation: logoFloat 3s ease-in-out infinite;
+            position: relative;
+            z-index: 2;
+        }
+
+        @keyframes logoFloat {
+            0%, 100% { transform: translateY(0px) rotateY(0deg); }
+            50% { transform: translateY(-15px) rotateY(10deg); }
+        }
+
+        .logo-rings {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        .ring {
+            position: absolute;
+            border: 2px solid rgba(6, 182, 212, 0.3);
+            border-radius: 50%;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        .ring-1 {
+            width: 180px;
+            height: 180px;
+            animation: ringRotate 4s linear infinite;
+        }
+
+        .ring-2 {
+            width: 220px;
+            height: 220px;
+            animation: ringRotate 6s linear infinite reverse;
+        }
+
+        .ring-3 {
+            width: 260px;
+            height: 260px;
+            animation: ringRotate 8s linear infinite;
+        }
+
+        @keyframes ringRotate {
+            from { transform: translate(-50%, -50%) rotate(0deg); }
+            to { transform: translate(-50%, -50%) rotate(360deg); }
+        }
+
+        /* Animated Text */
+        .intro-text-container {
+            margin-bottom: 2rem;
+        }
+
+        .intro-logo-text {
+            font-size: 5rem;
+            font-weight: 700;
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            gap: 0.1em;
+        }
+
+        .letter {
+            display: inline-block;
+            color: #ffffff;
+            text-shadow: 0 4px 8px rgba(0, 0, 0, 0.4);
+            animation: letterDrop 0.8s ease both;
+            position: relative;
+        }
+
+        .letter:nth-child(1) { animation-delay: 0.8s; }
+        .letter:nth-child(2) { animation-delay: 0.9s; }
+        .letter:nth-child(3) { animation-delay: 1.0s; }
+        .letter:nth-child(4) { animation-delay: 1.1s; }
+        .letter:nth-child(5) { animation-delay: 1.2s; }
+        .letter:nth-child(7) { animation-delay: 1.3s; }
+        .letter:nth-child(8) { animation-delay: 1.4s; }
+
+        @keyframes letterDrop {
+            0% { 
+                opacity: 0; 
+                transform: translateY(-100px) rotateX(90deg);
+            }
+            50% { 
+                opacity: 1; 
+                transform: translateY(10px) rotateX(-10deg);
+            }
+            100% { 
+                opacity: 1; 
+                transform: translateY(0) rotateX(0deg);
+            }
+        }
+
+        .letter:hover {
+            animation: letterBounce 0.6s ease;
+            color: #06b6d4;
+            text-shadow: 0 0 20px rgba(6, 182, 212, 0.8);
+        }
+
+        @keyframes letterBounce {
+            0%, 100% { transform: translateY(0) scale(1); }
+            50% { transform: translateY(-10px) scale(1.2); }
+        }
+
+        /* Animated Tagline */
+        .intro-tagline {
+            margin-bottom: 2rem;
+            animation: taglineSlide 0.6s ease 1.6s both;
+        }
+
+        @keyframes taglineSlide {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .tagline-words {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+
+        .word {
+            font-size: 1.5rem;
+            color: rgba(255, 255, 255, 0.9);
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+            font-weight: 300;
+            animation: wordFade 0.6s ease both;
+        }
+
+        .word:nth-child(1) { animation-delay: 1.8s; }
+        .word:nth-child(2) { animation-delay: 1.9s; color: #06b6d4; font-weight: 600; }
+        .word:nth-child(3) { animation-delay: 2.0s; }
+        .word:nth-child(4) { animation-delay: 2.1s; }
+        .word:nth-child(5) { animation-delay: 2.2s; color: #0891b2; font-weight: 500; }
+        .word:nth-child(6) { animation-delay: 2.3s; }
+
+        @keyframes wordFade {
+            from { opacity: 0; transform: scale(0.8); }
+            to { opacity: 1; transform: scale(1); }
+        }
+
+        /* Advanced Loading Animation */
+        .intro-loader-container {
+            animation: loaderEntrance 0.5s ease 2.4s both;
+        }
+
+        @keyframes loaderEntrance {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .loader-text {
+            font-size: 1rem;
+            color: rgba(255, 255, 255, 0.8);
+            margin-bottom: 1rem;
+            animation: textPulse 2s ease-in-out infinite;
+        }
+
+        @keyframes textPulse {
+            0%, 100% { opacity: 0.8; }
+            50% { opacity: 1; }
+        }
+
+        .loader-wrapper {
+            position: relative;
+            width: 400px;
+            height: 6px;
+            margin: 0 auto 1rem;
+            border-radius: 3px;
+            overflow: hidden;
+        }
+
+        .loader-track {
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 3px;
+        }
+
+        .loader-progress {
+            position: absolute;
+            top: 0;
+            left: 0;
+            height: 100%;
+            background: linear-gradient(90deg, #06b6d4, #67e8f9, #06b6d4);
+            background-size: 200% 100%;
+            border-radius: 3px;
+            animation: progressFill 1s ease-out, progressShine 1.5s ease-in-out infinite;
+        }
+
+        @keyframes progressFill {
+            from { width: 0%; }
+            to { width: 100%; }
+        }
+
+        @keyframes progressShine {
+            0% { background-position: -200% 0; }
+            100% { background-position: 200% 0; }
+        }
+
+        .loader-glow {
+            position: absolute;
+            top: -2px;
+            left: 0;
+            width: 20px;
+            height: 10px;
+            background: radial-gradient(ellipse, rgba(6, 182, 212, 0.8), transparent);
+            border-radius: 50%;
+            animation: glowMove 1s ease-out;
+        }
+
+        @keyframes glowMove {
+            from { left: 0; opacity: 1; }
+            to { left: calc(100% - 20px); opacity: 0; }
+        }
+
+        .loader-percentage {
+            font-size: 0.9rem;
+            color: #06b6d4;
+            font-weight: 600;
+            animation: percentageCount 1s ease-out;
+        }
+
+        @keyframes percentageCount {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        /* Transition Effect */
+        .transition-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle, transparent 30%, rgba(6, 182, 212, 0.1) 100%);
+            opacity: 0;
+            animation: transitionPulse 0.5s ease 6.5s both;
+        }
+
+        @keyframes transitionPulse {
+            0% { opacity: 0; transform: scale(0.8); }
+            50% { opacity: 1; transform: scale(1.1); }
+            100% { opacity: 0; transform: scale(1.5); }
+        }
+
+        /* Main Content Animation */
+        .main-content {
+            animation: mainContentEntrance 0.8s ease 3.3s both;
+        }
+
+        @keyframes mainContentEntrance {
+            0% { 
+                opacity: 0; 
+                transform: translateY(30px);
+            }
+            100% { 
+                opacity: 1; 
+                transform: translateY(0);
+            }
+        }
+
+        /* Header */
+        .header {
+            position: relative;
+            z-index: 10;
+            padding: 1.5rem 0;
+        }
+
+        .nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 2rem;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .logo-image {
+            height: 80px;
+            width: auto;
+            filter: drop-shadow(0 3px 6px rgba(0, 0, 0, 0.4));
+            transition: transform 0.3s ease;
+        }
+
+        .logo-image:hover {
+            transform: scale(1.05);
+        }
+
+        .logo-text {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: #ffffff;
+            text-shadow: 0 3px 6px rgba(0, 0, 0, 0.4);
+            letter-spacing: -0.02em;
+            line-height: 0.9;
+            margin-top: -0.2rem;
+        }
+
+        .logo-icon {
+            font-size: 1.8rem;
+        }
+
+        .nav-actions {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        .download-btn {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 0.75rem 1.5rem;
+            border-radius: 12px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .download-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+            border-color: rgba(255, 255, 255, 0.4);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+        }
+
+        /* Main content */
+        .main {
+            position: relative;
+            z-index: 10;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 6rem 2rem 4rem;
+            text-align: center;
+        }
+
+        .subtitle {
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 1.1rem;
+            margin-bottom: 2rem;
+            font-weight: 400;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .main-title {
+            font-size: clamp(3.5rem, 8vw, 6rem);
+            font-weight: 300;
+            line-height: 1.1;
+            margin-bottom: 4rem;
+            color: #ffffff;
+            text-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+            max-width: 900px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .main-title .highlight {
+            font-style: italic;
+            color: #06b6d4;
+            text-shadow: 0 0 20px rgba(6, 182, 212, 0.5);
+        }
+
+        .cta-button {
+            background: #1a1a1a;
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 1rem 2.5rem;
+            border-radius: 50px;
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 6rem;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .cta-button::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+            transition: left 0.5s;
+        }
+
+        .cta-button:hover {
+            background: #2a2a2a;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
+            border-color: rgba(255, 255, 255, 0.3);
+        }
+
+        .cta-button:hover::before {
+            left: 100%;
+        }
+
+        .cta-button:active {
+            transform: translateY(-2px) scale(0.98);
+            transition: transform 0.1s;
+        }
+
+        .platform-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            flex-wrap: wrap;
+            margin-bottom: 2rem;
+        }
+
+        /* Preview Section */
+        .preview-section {
+            margin-top: 4rem;
+            margin-bottom: 6rem;
+        }
+
+        .preview-container {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(20px);
+            border-radius: 20px;
+            padding: 2rem;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+            max-width: 800px;
+            margin: 0 auto;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .preview-header {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .preview-dots {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .preview-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .preview-dot:first-child { background: #ff5f57; }
+        .preview-dot:nth-child(2) { background: #ffbd2e; }
+        .preview-dot:nth-child(3) { background: #28ca42; }
+
+        .preview-title {
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 0.9rem;
+            margin-left: auto;
+        }
+
+        .preview-content {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 12px;
+            padding: 2rem;
+            min-height: 300px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            position: relative;
+        }
+
+        .preview-mockup {
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 1.1rem;
+            line-height: 1.6;
+        }
+
+        .preview-highlight {
+            color: #06b6d4;
+            font-weight: 600;
+        }
+
+        /* Feature cards */
+        .features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin-top: 6rem;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .main {
+                padding: 4rem 1.5rem 3rem;
+            }
+            
+            .main-title {
+                font-size: clamp(2.5rem, 8vw, 4rem);
+                margin-bottom: 3rem;
+            }
+            
+            .preview-container {
+                padding: 1.5rem;
+                margin: 0 1rem;
+            }
+            
+            .preview-content {
+                padding: 1.5rem;
+                min-height: 250px;
+            }
+            
+            .features {
+                grid-template-columns: 1fr;
+                gap: 1.5rem;
+                margin-top: 4rem;
+            }
+            
+            .feature-card {
+                padding: 1.5rem;
+            }
+            
+            .cta-button {
+                padding: 0.875rem 2rem;
+                font-size: 0.95rem;
+            }
+
+            .platform-buttons {
+                flex-direction: column;
+                align-items: center;
+            }
+        }
+
+        .feature-card {
+            background: rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(20px);
+            border-radius: 16px;
+            padding: 2rem;
+            text-align: center;
+            transition: all 0.3s ease;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .feature-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+            background: rgba(255, 255, 255, 0.12);
+            border-color: rgba(255, 255, 255, 0.2);
+        }
+
+        .feature-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            color: #ffffff;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .feature-description {
+            color: rgba(255, 255, 255, 0.7);
+            line-height: 1.6;
+            font-size: 0.95rem;
+        }
+
+
+
+        /* Form */
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .form-group.full-width {
+            grid-column: 1 / -1;
+        }
+
+        .form-label {
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            color: #374151;
+            font-size: 0.9rem;
+        }
+
+        .form-input {
+            padding: 0.75rem;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: border-color 0.2s;
+            font-family: inherit;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: #2563eb;
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+
+        .form-textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+
+        .submit-btn {
+            width: 100%;
+            background: #2563eb;
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .submit-btn:hover {
+            background: #1d4ed8;
+            transform: translateY(-1px);
+        }
+
+        .submit-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* Enhanced Loading */
+        .loading {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(8px);
+            z-index: 2000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+        }
+
+        .loading-container {
+            text-align: center;
+            max-width: 400px;
+            padding: 2rem;
+        }
+
+        .loading-spinner {
+            width: 60px;
+            height: 60px;
+            border: 4px solid #f3f4f6;
+            border-top: 4px solid #2563eb;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 2rem;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .loading-text {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #1a1a1a;
+            margin-bottom: 1rem;
+        }
+
+        .loading-subtext {
+            font-size: 0.9rem;
+            color: #6b7280;
+            margin-bottom: 2rem;
+        }
+
+        /* Progress Bar */
+        .progress-container {
+            width: 100%;
+            background: #f3f4f6;
+            border-radius: 10px;
+            overflow: hidden;
+            margin-bottom: 1rem;
+        }
+
+        .progress-bar {
+            height: 8px;
+            background: linear-gradient(90deg, #2563eb, #3b82f6);
+            border-radius: 10px;
+            transition: width 0.5s ease;
+            animation: progressPulse 2s infinite;
+        }
+
+        @keyframes progressPulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+
+        .progress-text {
+            font-size: 0.8rem;
+            color: #6b7280;
+            text-align: center;
+        }
+
+        /* Skeleton Loaders */
+        .skeleton {
+            background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+            background-size: 200% 100%;
+            animation: loading 1.5s infinite;
+        }
+
+        @keyframes loading {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+
+        .skeleton-post {
+            background: white;
+            border-radius: 12px;
+            padding: 2rem;
+            margin-bottom: 1.5rem;
+            border: 1px solid #e2e8f0;
+        }
+
+        .skeleton-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .skeleton-date {
+            height: 20px;
+            width: 200px;
+            border-radius: 4px;
+        }
+
+        .skeleton-badge {
+            height: 24px;
+            width: 80px;
+            border-radius: 12px;
+        }
+
+        .skeleton-content {
+            height: 120px;
+            border-radius: 8px;
+            margin-top: 1rem;
+        }
+
+        /* Results */
+        .results {
+            display: none;
+            max-width: 1200px;
+            margin: 2rem auto;
+            padding: 0 2rem;
+        }
+
+        /* Content Management Features - Performance Optimized */
+        .content-management-bar {
+            background: rgba(255, 255, 255, 0.92);
+            border-radius: 16px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+        }
+
+        .management-section {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .filter-controls {
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+        }
+
+        .filter-btn {
+            background: rgba(248, 250, 252, 0.9);
+            color: #374151;
+            border: 1px solid rgba(226, 232, 240, 0.8);
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .filter-btn:hover, .filter-btn.active {
+            background: rgba(6, 182, 212, 0.1);
+            border-color: #06b6d4;
+            color: #0891b2;
+            transform: translateY(-1px);
+        }
+
+        .search-box {
+            background: rgba(255, 255, 255, 0.95);
+            border: 1px solid rgba(226, 232, 240, 0.8);
+            border-radius: 8px;
+            padding: 0.5rem 1rem;
+            color: #374151;
+            font-size: 0.9rem;
+            width: 200px;
+        }
+
+        .search-box::placeholder {
+            color: #9ca3af;
+        }
+
+        .search-box:focus {
+            outline: none;
+            border-color: #06b6d4;
+            box-shadow: 0 0 0 2px rgba(6, 182, 212, 0.2);
+            background: rgba(255, 255, 255, 1);
+        }
+
+        .view-toggle {
+            display: flex;
+            background: rgba(248, 250, 252, 0.9);
+            border-radius: 8px;
+            overflow: hidden;
+            border: 1px solid rgba(226, 232, 240, 0.8);
+        }
+
+        .view-btn {
+            background: none;
+            border: none;
+            color: #6b7280;
+            padding: 0.5rem 1rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .view-btn.active {
+            background: #06b6d4;
+            color: white;
+        }
+
+        .export-controls {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .export-btn {
+            background: linear-gradient(135deg, #06b6d4, #0891b2);
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .export-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(6, 182, 212, 0.3);
+        }
+
+        /* Calendar View */
+        .calendar-view {
+            display: none;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(20px);
+            border-radius: 16px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .calendar-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+        }
+
+        .calendar-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: white;
+        }
+
+        .calendar-nav {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        .nav-btn {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 0.5rem;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .nav-btn:hover {
+            background: rgba(6, 182, 212, 0.2);
+            border-color: rgba(6, 182, 212, 0.4);
+        }
+
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 1px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .calendar-day {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 1rem;
+            min-height: 100px;
+            position: relative;
+            transition: all 0.3s;
+        }
+
+        .calendar-day:hover {
+            background: rgba(6, 182, 212, 0.1);
+        }
+
+        .calendar-day.has-post {
+            background: rgba(6, 182, 212, 0.2);
+        }
+
+        .day-number {
+            font-weight: 600;
+            color: white;
+            margin-bottom: 0.5rem;
+        }
+
+        .day-posts {
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+        }
+
+        .calendar-post-indicator {
+            background: #06b6d4;
+            color: white;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.7rem;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .calendar-post-indicator:hover {
+            background: #0891b2;
+            transform: scale(1.05);
+        }
+
+        /* Post Analytics - Performance Optimized */
+        .post-analytics {
+            background: rgba(248, 250, 252, 0.95);
+            border-radius: 8px;
+            padding: 1rem;
+            margin-top: 1rem;
+            border: 1px solid rgba(226, 232, 240, 0.6);
+            /* Performance optimization */
+            contain: layout style paint;
+        }
+
+        .analytics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .analytics-item {
+            text-align: center;
+        }
+
+        .analytics-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #06b6d4;
+            margin-bottom: 0.25rem;
+        }
+
+        .analytics-label {
+            font-size: 0.8rem;
+            color: #6b7280;
+        }
+
+        .character-counter {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.85rem;
+            color: #4b5563;
+        }
+
+        .character-bar {
+            flex: 1;
+            height: 4px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 2px;
+            overflow: hidden;
+        }
+
+        .character-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #10b981, #06b6d4, #f59e0b, #ef4444);
+            border-radius: 2px;
+            transition: width 0.3s;
+        }
+
+        .hashtag-suggestions {
+            margin-top: 1rem;
+        }
+
+        .hashtag-suggestions > div:first-child {
+            color: #4b5563;
+            font-size: 0.9rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .hashtag-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-top: 0.5rem;
+        }
+
+        .hashtag-item {
+            background: rgba(6, 182, 212, 0.2);
+            color: #06b6d4;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+        }
+
+        .hashtag-item:hover {
+            background: rgba(6, 182, 212, 0.3);
+            transform: scale(1.05);
+        }
+
+        .hashtag-popularity {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            padding: 0.1rem 0.3rem;
+            border-radius: 2px;
+            font-size: 0.7rem;
+        }
+
+        .results-header {
+            text-align: center;
+            margin-bottom: 3rem;
+            padding: 2rem;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 16px;
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+        }
+
+        .results-title {
+            font-size: 2rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            color: #1f2937;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 1rem;
+            margin-top: 2rem;
+        }
+
+        .stat-card {
+            background: rgba(255, 255, 255, 0.98);
+            padding: 1.5rem;
+            border-radius: 12px;
+            text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+        }
+
+        .stat-number {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #2563eb;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-label {
+            font-size: 0.9rem;
+            color: #4b5563;
+        }
+
+        /* Enhanced Post cards - Performance Optimized */
+        .post-card {
+            background: rgba(255, 255, 255, 0.98);
+            border-radius: 12px;
+            padding: 2rem;
+            margin-bottom: 1.5rem;
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            /* Performance optimizations */
+            transform: translateZ(0);
+            -webkit-transform: translateZ(0);
+            will-change: transform;
+        }
+
+        .post-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+            transition: left 0.5s;
+        }
+
+        .post-card:hover {
+            transform: translateY(-2px) translateZ(0);
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+            border-color: rgba(6, 182, 212, 0.5);
+        }
+
+        .post-card:hover::before {
+            left: 100%;
+        }
+
+        .post-card:active {
+            transform: translateY(-2px);
+            transition: transform 0.1s;
+        }
+
+        .post-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid #f3f4f6;
+        }
+
+        .post-date {
+            font-weight: 500;
+            color: #1f2937;
+        }
+
+        .post-badge-container {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .post-badge {
+            background: #2563eb;
+            color: white;
+            padding: 0.25rem 0.75rem;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+
+        .edit-btn {
+            background: rgba(99, 102, 241, 0.1);
+            color: #6366f1;
+            border: 1px solid rgba(99, 102, 241, 0.2);
+            padding: 0.25rem;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 0.75rem;
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .edit-btn:hover {
+            background: rgba(99, 102, 241, 0.15);
+            border-color: rgba(99, 102, 241, 0.3);
+            transform: scale(1.05);
+        }
+
+        .edit-btn:active {
+            transform: scale(0.95);
+        }
+
+        /* Enhanced AI Bot Button */
+        .ai-bot-btn {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 0.25rem;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            font-size: 0.75rem;
+            width: 28px;
+            height: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+            animation: aiBreathing 3s ease-in-out infinite;
+        }
+
+        @keyframes aiBreathing {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        .ai-bot-btn::before {
+            content: '';
+            position: absolute;
+            top: -2px;
+            left: -2px;
+            right: -2px;
+            bottom: -2px;
+            background: linear-gradient(45deg, #667eea, #764ba2, #667eea);
+            border-radius: 50%;
+            z-index: -1;
+            animation: aiGlow 2s linear infinite;
+            opacity: 0;
+        }
+
+        @keyframes aiGlow {
+            0%, 100% { opacity: 0; transform: rotate(0deg); }
+            50% { opacity: 0.3; transform: rotate(180deg); }
+        }
+
+        .ai-bot-btn:hover {
+            transform: scale(1.15);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+            animation: aiExcited 0.6s ease infinite;
+        }
+
+        @keyframes aiExcited {
+            0%, 100% { transform: scale(1.15) rotate(0deg); }
+            25% { transform: scale(1.2) rotate(-5deg); }
+            75% { transform: scale(1.2) rotate(5deg); }
+        }
+
+        .ai-bot-btn:hover::before {
+            opacity: 0.6;
+            animation: aiGlow 1s linear infinite;
+        }
+
+        .ai-bot-btn:active {
+            transform: scale(0.95);
+            animation: none;
+        }
+
+        .ai-bot-btn.thinking {
+            animation: aiThinking 1s ease-in-out infinite;
+        }
+
+        @keyframes aiThinking {
+            0%, 100% { transform: scale(1) rotate(0deg); }
+            25% { transform: scale(1.1) rotate(-10deg); }
+            50% { transform: scale(1.05) rotate(0deg); }
+            75% { transform: scale(1.1) rotate(10deg); }
+        }
+
+        /* Enhanced AI Bot Popup */
+        .ai-bot-popup {
+            display: none;
+            position: absolute;
+            top: 100%;
+            right: 0;
+            width: 380px;
+            background: linear-gradient(145deg, #ffffff, #f8fafc);
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(102, 126, 234, 0.1);
+            z-index: 1000;
+            margin-top: 0.5rem;
+            animation: popupSlideIn 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            backdrop-filter: blur(10px);
+            overflow: hidden;
+        }
+
+        .ai-bot-popup::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, #667eea, #764ba2, #667eea);
+            animation: aiPopupGlow 3s ease-in-out infinite;
+        }
+
+        @keyframes aiPopupGlow {
+            0%, 100% { opacity: 0.6; }
+            50% { opacity: 1; }
+        }
+
+        @keyframes popupSlideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-20px) scale(0.9) rotateX(-10deg);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1) rotateX(0deg);
+            }
+        }
+
+        .ai-bot-popup.processing {
+            animation: processingPulse 2s infinite;
+        }
+
+        @keyframes processingPulse {
+            0%, 100% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(1.02);
+            }
+        }
+
+        .ai-popup-header {
+            padding: 1rem;
+            border-bottom: 1px solid #f3f4f6;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .ai-popup-title {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            font-weight: 600;
+            color: #374151;
+            font-size: 0.95rem;
+        }
+
+        .ai-avatar {
+            width: 32px;
+            height: 32px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            animation: aiAvatarBreathing 2s ease-in-out infinite;
+            position: relative;
+            overflow: hidden;
+        }
+
+        @keyframes aiAvatarBreathing {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+
+        .ai-avatar::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(45deg, transparent, rgba(255,255,255,0.3), transparent);
+            animation: aiAvatarShine 3s linear infinite;
+        }
+
+        @keyframes aiAvatarShine {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .ai-avatar.thinking {
+            animation: aiAvatarThinking 1s ease-in-out infinite;
+        }
+
+        @keyframes aiAvatarThinking {
+            0%, 100% { transform: scale(1) rotate(0deg); }
+            25% { transform: scale(1.1) rotate(-5deg); }
+            50% { transform: scale(1.05) rotate(0deg); }
+            75% { transform: scale(1.1) rotate(5deg); }
+        }
+
+        .ai-status-indicator {
+            font-size: 0.7rem;
+            color: #10b981;
+            font-weight: 500;
+            opacity: 0.8;
+        }
+
+        .ai-popup-close {
+            background: none;
+            border: none;
+            color: #6b7280;
+            cursor: pointer;
+            padding: 0.25rem;
+            border-radius: 4px;
+            transition: all 0.2s;
+        }
+
+        .ai-popup-close:hover {
+            background: #f3f4f6;
+            color: #374151;
+        }
+
+        .ai-popup-content {
+            padding: 1rem;
+        }
+
+        .ai-suggestions {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .ai-suggestion-btn {
+            background: linear-gradient(135deg, #f8fafc, #ffffff);
+            color: #374151;
+            border: 1px solid #e5e7eb;
+            padding: 0.6rem 0.9rem;
+            border-radius: 8px;
+            font-size: 0.75rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .ai-suggestion-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(99, 102, 241, 0.1), transparent);
+            transition: left 0.5s;
+        }
+
+        .ai-suggestion-btn:hover {
+            background: linear-gradient(135deg, #e0e7ff, #f0f4ff);
+            border-color: #c7d2fe;
+            color: #3730a3;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.15);
+        }
+
+        .ai-suggestion-btn:hover::before {
+            left: 100%;
+        }
+
+        .ai-suggestion-btn:active {
+            transform: translateY(0);
+            transition: transform 0.1s;
+        }
+
+        .ai-suggestion-btn.selected {
+            background: linear-gradient(135deg, #2563eb, #3b82f6);
+            color: white;
+            border-color: #2563eb;
+            animation: suggestionPulse 0.6s ease;
+        }
+
+        @keyframes suggestionPulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+
+        .ai-chat-area {
+            background: #f8fafc;
+            border-radius: 8px;
+            padding: 0.75rem;
+            max-height: 200px;
+            overflow-y: auto;
+            margin-bottom: 0.75rem;
+        }
+
+        .ai-chat-message {
+            margin-bottom: 0.75rem;
+            padding: 0.75rem 1rem;
+            border-radius: 12px;
+            font-size: 0.85rem;
+            line-height: 1.5;
+            position: relative;
+            animation: messageSlideIn 0.3s ease;
+            max-width: 85%;
+        }
+
+        @keyframes messageSlideIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .ai-chat-message.bot {
+            background: linear-gradient(135deg, #e0e7ff, #f0f4ff);
+            color: #3730a3;
+            border: 1px solid rgba(99, 102, 241, 0.1);
+            margin-right: auto;
+            border-bottom-left-radius: 4px;
+        }
+
+        .ai-chat-message.bot::before {
+            content: '';
+            position: absolute;
+            left: -8px;
+            bottom: 8px;
+            width: 0;
+            height: 0;
+            border-style: solid;
+            border-width: 0 8px 8px 0;
+            border-color: transparent #e0e7ff transparent transparent;
+        }
+
+        .ai-chat-message.user {
+            background: linear-gradient(135deg, #2563eb, #3b82f6);
+            color: white;
+            margin-left: auto;
+            border-bottom-right-radius: 4px;
+            box-shadow: 0 2px 8px rgba(37, 99, 235, 0.2);
+        }
+
+        .ai-chat-message.user::before {
+            content: '';
+            position: absolute;
+            right: -8px;
+            bottom: 8px;
+            width: 0;
+            height: 0;
+            border-style: solid;
+            border-width: 0 0 8px 8px;
+            border-color: transparent transparent #2563eb transparent;
+        }
+
+        /* Syntax highlighting for hashtags and mentions */
+        .hashtag {
+            color: #059669;
+            font-weight: 600;
+        }
+
+        .mention {
+            color: #dc2626;
+            font-weight: 600;
+        }
+
+        .emoji {
+            font-size: 1.1em;
+        }
+
+        /* Typing indicator */
+        .typing-indicator {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.75rem 1rem;
+            background: #f3f4f6;
+            border-radius: 12px;
+            margin-bottom: 0.75rem;
+            animation: messageSlideIn 0.3s ease;
+        }
+
+        .typing-dots {
+            display: flex;
+            gap: 0.25rem;
+        }
+
+        .typing-dot {
+            width: 6px;
+            height: 6px;
+            background: #6b7280;
+            border-radius: 50%;
+            animation: typingDot 1.4s ease-in-out infinite;
+        }
+
+        .typing-dot:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+
+        .typing-dot:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+
+        @keyframes typingDot {
+            0%, 60%, 100% {
+                transform: translateY(0);
+                opacity: 0.4;
+            }
+            30% {
+                transform: translateY(-10px);
+                opacity: 1;
+            }
+        }
+
+        .ai-chat-input-area {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .ai-chat-input {
+            flex: 1;
+            padding: 0.5rem;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            font-size: 0.8rem;
+        }
+
+        .ai-chat-input:focus {
+            outline: none;
+            border-color: #2563eb;
+            box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.1);
+        }
+
+        .ai-chat-send {
+            background: #2563eb;
+            color: white;
+            border: none;
+            padding: 0.5rem 0.75rem;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            transition: all 0.2s;
+        }
+
+        .ai-chat-send:hover {
+            background: #1d4ed8;
+        }
+
+        .ai-chat-send:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .ai-apply-btn {
+            background: #10b981;
+            color: white;
+            border: none;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.7rem;
+            cursor: pointer;
+            margin-top: 0.25rem;
+            transition: all 0.2s;
+        }
+
+        .ai-apply-btn:hover {
+            background: #059669;
+        }
+
+        /* Processing overlay */
+        .ai-processing-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(2px);
+            border-radius: 12px;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            z-index: 10;
+        }
+
+        .ai-processing-spinner {
+            width: 24px;
+            height: 24px;
+            border: 2px solid #e5e7eb;
+            border-top: 2px solid #2563eb;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 0.5rem;
+        }
+
+        .ai-processing-text {
+            font-size: 0.8rem;
+            color: #6b7280;
+            font-weight: 500;
+        }
+
+        .post-content {
+            background: rgba(248, 250, 252, 0.8);
+            border-radius: 8px;
+            padding: 1.5rem;
+            font-size: 0.95rem;
+            line-height: 1.6;
+            white-space: pre-wrap;
+            position: relative;
+            color: #1f2937;
+            border: 1px solid rgba(226, 232, 240, 0.5);
+        }
+
+        .copy-btn {
+            position: absolute;
+            top: 0.75rem;
+            right: 0.75rem;
+            background: rgba(37, 99, 235, 0.1);
+            color: #2563eb;
+            border: 1px solid rgba(37, 99, 235, 0.2);
+            padding: 0.375rem;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            font-size: 0.75rem;
+            width: 28px;
+            height: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            backdrop-filter: blur(8px);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .copy-btn::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            background: rgba(37, 99, 235, 0.2);
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            transition: width 0.3s, height 0.3s;
+        }
+
+        .copy-btn:hover {
+            background: rgba(37, 99, 235, 0.15);
+            border-color: rgba(37, 99, 235, 0.3);
+            transform: scale(1.1) rotate(5deg);
+        }
+
+        .copy-btn:active {
+            transform: scale(0.9);
+        }
+
+        .copy-btn:active::before {
+            width: 40px;
+            height: 40px;
+        }
+
+        .copy-btn.copied {
+            background: rgba(16, 185, 129, 0.15);
+            border-color: rgba(16, 185, 129, 0.3);
+            color: #10b981;
+            animation: copySuccess 0.6s ease;
+        }
+
+        @keyframes copySuccess {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.2) rotate(10deg); }
+            100% { transform: scale(1); }
+        }
+
+        /* Edit Modal */
+        .edit-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(8px);
+            z-index: 3000;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .edit-modal-content {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            border-radius: 16px;
+            padding: 2rem;
+            width: 90%;
+            max-width: 700px;
+            max-height: 90vh;
+            overflow-y: auto;
+            animation: slideUp 0.3s ease;
+        }
+
+        .edit-form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .edit-form-label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            color: #374151;
+            font-size: 0.9rem;
+        }
+
+        .edit-form-textarea {
+            width: 100%;
+            min-height: 200px;
+            padding: 0.75rem;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-family: inherit;
+            resize: vertical;
+            line-height: 1.5;
+        }
+
+        .edit-form-textarea:focus {
+            outline: none;
+            border-color: #2563eb;
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+
+        .edit-form-actions {
+            display: flex;
+            gap: 1rem;
+            justify-content: flex-end;
+        }
+
+        .edit-save-btn {
+            background: #10b981;
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .edit-save-btn:hover {
+            background: #059669;
+            transform: translateY(-1px);
+        }
+
+        .edit-cancel-btn {
+            background: #6b7280;
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .edit-cancel-btn:hover {
+            background: #4b5563;
+            transform: translateY(-1px);
+        }
+
+        /* Mobile & Responsive Improvements */
+        @media (max-width: 768px) {
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .features {
+                grid-template-columns: 1fr;
+            }
+
+            .main {
+                padding: 2rem 1rem;
+            }
+
+            .nav {
+                padding: 0 1rem;
+                flex-direction: column;
+                gap: 1rem;
+            }
+
+            .logo {
+                gap: 0.5rem;
+            }
+
+            .logo-image {
+                height: 60px;
+            }
+
+            .logo-text {
+                font-size: 2rem;
+            }
+
+            .main-title {
+                font-size: clamp(2rem, 8vw, 3rem);
+            }
+
+            .content-management-bar {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 1rem;
+            }
+
+            .management-section {
+                justify-content: center;
+                flex-wrap: wrap;
+            }
+
+            .search-box {
+                width: 100%;
+                max-width: 300px;
+            }
+
+            .calendar-grid {
+                grid-template-columns: repeat(7, 1fr);
+                gap: 1px;
+            }
+
+            .calendar-day {
+                padding: 0.5rem;
+                min-height: 80px;
+            }
+
+            .post-card {
+                padding: 1.5rem;
+            }
+
+            .post-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 0.5rem;
+            }
+
+            .post-badge-container {
+                align-self: flex-end;
+            }
+
+            .ai-bot-popup {
+                width: 90vw;
+                max-width: 350px;
+                right: 5vw;
+            }
+
+            .analytics-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .filter-controls {
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+
+            .export-controls {
+                flex-direction: column;
+                width: 100%;
+            }
+
+            .export-btn {
+                justify-content: center;
+            }
+        }
+
+        /* Touch-friendly improvements */
+        @media (hover: none) and (pointer: coarse) {
+            .filter-btn, .export-btn, .nav-btn {
+                min-height: 44px;
+                min-width: 44px;
+            }
+
+            .copy-btn, .edit-btn, .ai-bot-btn {
+                min-height: 44px;
+                min-width: 44px;
+            }
+
+            .ai-suggestion-btn {
+                min-height: 44px;
+                padding: 0.75rem 1rem;
+            }
+        }
+
+        /* Swipe gesture support */
+        .swipe-container {
+            touch-action: pan-x;
+            overflow-x: auto;
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+        }
+
+        .swipe-container::-webkit-scrollbar {
+            display: none;
+        }
+
+        /* Bottom sheet modal for mobile */
+        .mobile-modal {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: white;
+            border-radius: 20px 20px 0 0;
+            transform: translateY(100%);
+            transition: transform 0.3s ease;
+            z-index: 1000;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .mobile-modal.active {
+            transform: translateY(0);
+        }
+
+        .mobile-modal-handle {
+            width: 40px;
+            height: 4px;
+            background: #d1d5db;
+            border-radius: 2px;
+            margin: 1rem auto 0;
+        }
+
+        .mobile-modal-content {
+            padding: 1rem 1.5rem 2rem;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Spectacular Intro Page -->
+    <div class="intro-page" id="introPage">
+        <!-- Animated Background Particles -->
+        <div class="particles-container">
+            <div class="particle"></div>
+            <div class="particle"></div>
+            <div class="particle"></div>
+        </div>
+        
+
+        
+        <!-- Main Intro Content -->
+        <div class="intro-content">
+            <!-- Logo with Spectacular Animation -->
+            <div class="intro-logo-container">
+                <div class="logo-backdrop"></div>
+                <img src="/logo.png" alt="Craft AI Logo" class="intro-logo-image">
+                <div class="logo-rings">
+                    <div class="ring ring-1"></div>
+                    <div class="ring ring-2"></div>
+                    <div class="ring ring-3"></div>
+                </div>
+            </div>
+            
+            <!-- Animated Text -->
+            <div class="intro-text-container">
+                <h1 class="intro-logo-text">
+                    <span class="letter">c</span>
+                    <span class="letter">r</span>
+                    <span class="letter">a</span>
+                    <span class="letter">f</span>
+                    <span class="letter">t</span>
+                    <span class="space"> </span>
+                    <span class="letter">a</span>
+                    <span class="letter">i</span>
+                </h1>
+            </div>
+            
+            <!-- Animated Tagline -->
+            <div class="intro-tagline">
+                <div class="tagline-words">
+                    <span class="word">Crafting</span>
+                    <span class="word">AI-powered</span>
+                    <span class="word">content</span>
+                    <span class="word">for</span>
+                    <span class="word">LinkedIn</span>
+                    <span class="word">engagement</span>
+                </div>
+            </div>
+            
+            <!-- Advanced Loading Animation -->
+            <div class="intro-loader-container">
+                <div class="loader-text">Initializing AI Engine...</div>
+                <div class="loader-wrapper">
+                    <div class="loader-track"></div>
+                    <div class="loader-progress"></div>
+                    <div class="loader-glow"></div>
+                </div>
+                <div class="loader-percentage">0%</div>
+            </div>
+        </div>
+        
+        <!-- Transition Effect -->
+        <div class="transition-overlay"></div>
+    </div>
+
+    <!-- Main Content (initially hidden) -->
+    <div class="main-content" id="mainContent" style="display: none;">
+        <!-- Decorative shapes -->
+        <div class="shape shape-1"></div>
+        <div class="shape shape-2"></div>
+        <div class="shape shape-3"></div>
+        <div class="shape shape-4"></div>
+
+    <!-- Header -->
+    <header class="header">
+        <nav class="nav">
+            <div class="logo">
+                <img src="/logo.png" alt="Craft AI Logo" class="logo-image">
+                <span class="logo-text">craft ai</span>
+            </div>
+            <div class="nav-actions">
+                <a href="generator.html?platform=linkedin" class="download-btn" style="text-decoration: none;">
+                    LinkedIn
+                </a>
+                <a href="publisher.html" class="download-btn" style="text-decoration: none;">
+                    Publishing Hub
+                </a>
+            </div>
+        </nav>
+    </header>
+
+    <!-- Main content -->
+    <main class="main">
+        <p class="subtitle">A new social content generator from PostCraft</p>
+        <h1 class="main-title">
+            The content creator that works <span class="highlight">for you</span>
+        </h1>
+
+        <div class="platform-buttons">
+            <a href="generator.html?platform=linkedin" class="cta-button" style="text-decoration: none; display: inline-flex;">
+                <span>⬇</span> Generate LinkedIn Posts
+            </a>
+        </div>
+
+        <!-- Preview Section -->
+        <div class="preview-section">
+            <div class="preview-container">
+                <div class="preview-header">
+                    <div class="preview-dots">
+                        <div class="preview-dot"></div>
+                        <div class="preview-dot"></div>
+                        <div class="preview-dot"></div>
+                    </div>
+                    <div class="preview-title">LinkedIn Post Generator</div>
+                </div>
+                <div class="preview-content">
+                    <div class="preview-mockup">
+                        <div style="text-align: left; max-width: 500px;">
+                            <div style="margin-bottom: 1.5rem;">
+                                <div style="font-size: 0.9rem; color: rgba(255,255,255,0.6); margin-bottom: 0.5rem;">🎉 Holiday Post • December 25, 2024</div>
+                                <div style="font-size: 1.1rem; line-height: 1.6;">
+                                    🎄 <span class="preview-highlight">Wishing everyone a Merry Christmas!</span> As we celebrate this special day, let's reflect on the year's achievements and look forward to new opportunities ahead.
+                                </div>
+                                <div style="margin-top: 1rem; font-size: 0.9rem; color: #06b6d4;">
+                                    #Christmas #Gratitude #TeamWork #Success
+                                </div>
+                            </div>
+                            <div style="border-top: 1px solid rgba(255,255,255,0.1); padding-top: 1rem; font-size: 0.8rem; color: rgba(255,255,255,0.5);">
+                                ✨ Generated with AI • Optimized for engagement
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Features -->
+        <div class="features">
+            <div class="feature-card">
+                <h3 class="feature-title">🤖 Smart Content Creation</h3>
+                <p class="feature-description">
+                    AI analyzes your business and creates engaging LinkedIn posts that match your brand voice and audience.
+                </p>
+            </div>
+
+            <div class="feature-card">
+                <h3 class="feature-title">📅 Automated Scheduling</h3>
+                <p class="feature-description">
+                    Generate complete content calendars with holiday posts, business insights, and perfectly timed content.
+                </p>
+            </div>
+
+            <div class="feature-card">
+                <h3 class="feature-title">📊 Performance Optimized</h3>
+                <p class="feature-description">
+                    Every post is crafted for maximum engagement with optimal length, hashtags, and call-to-actions.
+                </p>
+            </div>
+        </div>
+    </main>
+
+
+
+    <!-- Enhanced Loading -->
+    <div class="loading" id="loading" style="display: none;">
+        <div class="loading-container">
+            <div class="loading-spinner"></div>
+            <div class="loading-text" id="loadingText">Creating your content...</div>
+            <div class="loading-subtext" id="loadingSubtext">AI is analyzing your requirements</div>
+            
+            <div class="progress-container">
+                <div class="progress-bar" id="progressBar" style="width: 0%"></div>
+            </div>
+            <div class="progress-text" id="progressText">Initializing...</div>
+        </div>
+    </div>
+
+    <!-- Results -->
+    <div class="results" id="results"></div>
+
+    <!-- Skeleton Loading Template -->
+    <div class="results" id="skeletonResults" style="display: none;">
+        <div class="results-header">
+            <div class="skeleton" style="height: 2rem; width: 300px; margin: 0 auto 1rem; border-radius: 4px;"></div>
+            <div class="skeleton" style="height: 1rem; width: 400px; margin: 0 auto 2rem; border-radius: 4px;"></div>
+        </div>
+        
+        <div class="skeleton-post">
+            <div class="skeleton-header">
+                <div class="skeleton skeleton-date"></div>
+                <div class="skeleton skeleton-badge"></div>
+            </div>
+            <div class="skeleton skeleton-content"></div>
+        </div>
+        
+        <div class="skeleton-post">
+            <div class="skeleton-header">
+                <div class="skeleton skeleton-date"></div>
+                <div class="skeleton skeleton-badge"></div>
+            </div>
+            <div class="skeleton skeleton-content"></div>
+        </div>
+        
+        <div class="skeleton-post">
+            <div class="skeleton-header">
+                <div class="skeleton skeleton-date"></div>
+                <div class="skeleton skeleton-badge"></div>
+            </div>
+            <div class="skeleton skeleton-content"></div>
+        </div>
+    </div>
+
+    <!-- Edit Modal -->
+    <div class="edit-modal" id="editModal">
+        <div class="edit-modal-content">
+            <button class="close-btn" onclick="closeEditModal()">&times;</button>
+
+            <div class="modal-header">
+                <h2 class="modal-title">Edit LinkedIn Post</h2>
+                <p class="modal-subtitle">Modify your post content and save changes</p>
+            </div>
+
+            <form id="editForm">
+                <div class="edit-form-group">
+                    <label class="edit-form-label">Post Content</label>
+                    <textarea id="editPostContent" class="edit-form-textarea" placeholder="Enter your post content here..."></textarea>
+                </div>
+
+                <div class="edit-form-actions">
+                    <button type="button" class="edit-cancel-btn" onclick="closeEditModal()">
+                        Cancel
+                    </button>
+                    <button type="submit" class="edit-save-btn">
+                        Save Changes
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    </div> <!-- End of main-content -->
+
+    <script>
+        // Performance Optimizations
+        document.addEventListener('DOMContentLoaded', function() {
+            // Enable hardware acceleration for smooth scrolling
+            document.body.style.transform = 'translateZ(0)';
+            
+            // Optimize scroll performance
+            let ticking = false;
+            function updateScrollPosition() {
+                // Throttle scroll events for better performance
+                ticking = false;
+            }
+            
+            document.addEventListener('scroll', function() {
+                if (!ticking) {
+                    requestAnimationFrame(updateScrollPosition);
+                    ticking = true;
+                }
+            }, { passive: true });
+            
+            // Lazy load heavy elements
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('loaded');
+                    }
+                });
+            }, { threshold: 0.1 });
+            
+            // Observe post cards for lazy loading
+            setTimeout(() => {
+                document.querySelectorAll('.post-card').forEach(card => {
+                    observer.observe(card);
+                });
+            }, 100);
+        });
+
+        // Spectacular Intro Page Logic
+        document.addEventListener('DOMContentLoaded', function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const introSeenInSession = sessionStorage.getItem('postcraftIntroSeen') === '1';
+            const shouldSkipIntro = urlParams.get('skipIntro') === '1' || introSeenInSession;
+            const introPage = document.getElementById('introPage');
+            const mainContent = document.getElementById('mainContent');
+
+            if (shouldSkipIntro) {
+                if (introPage) {
+                    introPage.style.display = 'none';
+                }
+                if (mainContent) {
+                    mainContent.style.display = 'block';
+                }
+                return;
+            }
+
+            // Animate percentage counter
+            setTimeout(() => {
+                animatePercentage();
+            }, 5500);
+            
+            // Show main content after spectacular intro
+            setTimeout(() => {
+                document.getElementById('mainContent').style.display = 'block';
+                document.getElementById('introPage').style.display = 'none';
+                sessionStorage.setItem('postcraftIntroSeen', '1');
+            }, 7500);
+        });
+
+        function animatePercentage() {
+            const percentageElement = document.querySelector('.loader-percentage');
+            if (!percentageElement) return;
+            
+            let percentage = 0;
+            const interval = setInterval(() => {
+                percentage += Math.random() * 15 + 5; // Random increment for realistic feel
+                if (percentage >= 100) {
+                    percentage = 100;
+                    clearInterval(interval);
+                }
+                percentageElement.textContent = Math.floor(percentage) + '%';
+            }, 50);
+        }
+
+        // Set default dates
+        const today = new Date();
+        const nextWeek = new Date(today);
+        nextWeek.setDate(today.getDate() + 7);
+
+        document.getElementById('startDate').value = today.toISOString().split('T')[0];
+        document.getElementById('endDate').value = nextWeek.toISOString().split('T')[0];
+
+
+
+
+
+
+
+        // Enhanced loading with progress simulation
+        function showEnhancedLoading(data) {
+            const loading = document.getElementById('loading');
+            const loadingText = document.getElementById('loadingText');
+            const loadingSubtext = document.getElementById('loadingSubtext');
+            const progressBar = document.getElementById('progressBar');
+            const progressText = document.getElementById('progressText');
+            
+            loading.style.display = 'flex';
+            
+            // Calculate estimated posts
+            const startDate = new Date(data.startDate);
+            const endDate = new Date(data.endDate);
+            const daysDiff = Math.ceil((endDate - startDate) / (1000 * 60 * 60 * 24)) + 1;
+            
+            const loadingSteps = [
+                { progress: 10, text: 'Analyzing your requirements...', subtext: `Preparing to generate ${daysDiff} posts` },
+                { progress: 25, text: 'Fetching holiday data...', subtext: `Getting holidays for ${data.countryCode}` },
+                { progress: 40, text: 'Initializing AI models...', subtext: 'Connecting to content generation engine' },
+                { progress: 60, text: 'Generating content...', subtext: 'Creating personalized LinkedIn posts' },
+                { progress: 80, text: 'Optimizing posts...', subtext: 'Adding hashtags and final touches' },
+                { progress: 95, text: 'Almost ready...', subtext: 'Preparing your content calendar' }
+            ];
+            
+            let currentStep = 0;
+            
+            const updateProgress = () => {
+                if (currentStep < loadingSteps.length) {
+                    const step = loadingSteps[currentStep];
+                    
+                    progressBar.style.width = step.progress + '%';
+                    loadingText.textContent = step.text;
+                    loadingSubtext.textContent = step.subtext;
+                    progressText.textContent = `${step.progress}% complete`;
+                    
+                    currentStep++;
+                    setTimeout(updateProgress, 800 + Math.random() * 400);
+                }
+            };
+            
+            updateProgress();
+        }
+
+        function hideEnhancedLoading() {
+            const loading = document.getElementById('loading');
+            const progressBar = document.getElementById('progressBar');
+            
+            // Complete the progress bar
+            progressBar.style.width = '100%';
+            document.getElementById('progressText').textContent = '100% complete';
+            document.getElementById('loadingText').textContent = 'Content ready!';
+            document.getElementById('loadingSubtext').textContent = 'Displaying your posts...';
+            
+            setTimeout(() => {
+                loading.style.display = 'none';
+                // Reset for next time
+                progressBar.style.width = '0%';
+            }, 500);
+        }
+
+        function showResults(calendar) {
+            // Store calendar data globally for editing
+            currentCalendar = calendar;
+            
+            const festivalPosts = calendar.filter(post => post.type === 'festival').length;
+            const businessPosts = calendar.filter(post => post.type === 'business').length;
+
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.innerHTML = `
+                <div class="results-header">
+                    <h2 class="results-title">Your Content is Ready!</h2>
+                    <p style="color: #4b5563; font-size: 1.1rem;">Generated ${calendar.length} high-quality LinkedIn posts for your content calendar</p>
+                    
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-number">${calendar.length}</div>
+                            <div class="stat-label">Total Posts</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-number">${festivalPosts}</div>
+                            <div class="stat-label">Festival Posts</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-number">${businessPosts}</div>
+                            <div class="stat-label">Business Posts</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-number">${calculateAverageEngagement(calendar)}</div>
+                            <div class="stat-label">Avg. Engagement Score</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Content Management Bar -->
+                <div class="content-management-bar">
+                    <div class="management-section">
+                        <div class="filter-controls">
+                            <button class="filter-btn active" onclick="filterPosts('all')">All Posts</button>
+                            <button class="filter-btn" onclick="filterPosts('festival')">Festival</button>
+                            <button class="filter-btn" onclick="filterPosts('business')">Business</button>
+                        </div>
+                        <input type="text" class="search-box" placeholder="Search posts..." onkeyup="searchPosts(this.value)">
+                    </div>
+                    
+                    <div class="management-section">
+                        <div class="view-toggle">
+                            <button class="view-btn active" onclick="switchView('list')">📋 List</button>
+                            <button class="view-btn" onclick="switchView('calendar')">📅 Calendar</button>
+                        </div>
+                        
+                        <div class="export-controls">
+                            <button class="export-btn" onclick="exportToPDF()">
+                                📄 Export PDF
+                            </button>
+                            <button class="export-btn" onclick="exportToCSV()">
+                                📊 Export CSV
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Calendar View -->
+                <div class="calendar-view" id="calendarView">
+                    <div class="calendar-header">
+                        <h3 class="calendar-title">Content Calendar</h3>
+                        <div class="calendar-nav">
+                            <button class="nav-btn" onclick="previousMonth()">‹</button>
+                            <span id="currentMonth">Loading...</span>
+                            <button class="nav-btn" onclick="nextMonth()">›</button>
+                        </div>
+                    </div>
+                    <div class="calendar-grid" id="calendarGrid">
+                        <!-- Calendar will be populated by JavaScript -->
+                    </div>
+                </div>
+
+                <!-- Posts List View -->
+                <div class="posts-list-view" id="postsListView"></div>
+                
+                ${calendar.map((post, index) => {
+                    return createPostCard(post, index);
+                }).join('')}
+                
+                <div style="text-align: center; margin-top: 3rem;">
+                    <button onclick="location.reload()" style="background: #2563eb; color: white; border: none; padding: 0.75rem 1.5rem; border-radius: 8px; font-weight: 500; cursor: pointer;">
+                        Generate More Posts
+                    </button>
+                </div>
+            `;
+            resultsDiv.style.display = 'block';
+            
+            // Add event listeners for copy buttons after DOM is updated
+            setTimeout(() => {
+                calendar.forEach((post, index) => {
+                    const copyBtn = document.getElementById(`copyBtn${index}`);
+                    if (copyBtn) {
+                        copyBtn.addEventListener('click', function() {
+                            copyToClipboard(this, post.post);
+                        });
+                    }
+                });
+            }, 50);
+            
+            // Smooth scroll to results section
+            setTimeout(() => {
+                resultsDiv.scrollIntoView({ 
+                    behavior: 'smooth', 
+                    block: 'start' 
+                });
+            }, 100);
+        }
+
+        function showError(message) {
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.innerHTML = `
+                <div style="text-align: center; padding: 3rem; background: #fef2f2; border-radius: 16px; border: 1px solid #fecaca;">
+                    <div style="font-size: 3rem; margin-bottom: 1rem;">⚠️</div>
+                    <h2 style="color: #dc2626; margin-bottom: 1rem;">Something went wrong</h2>
+                    <p style="color: #7f1d1d; margin-bottom: 2rem;">${message}</p>
+                    <button onclick="location.reload()" style="background: #dc2626; color: white; border: none; padding: 0.75rem 1.5rem; border-radius: 8px; font-weight: 500; cursor: pointer;">
+                        Try Again
+                    </button>
+                </div>
+            `;
+            resultsDiv.style.display = 'block';
+            
+            // Smooth scroll to results section
+            setTimeout(() => {
+                resultsDiv.scrollIntoView({ 
+                    behavior: 'smooth', 
+                    block: 'start' 
+                });
+            }, 100);
+        }
+
+        function copyToClipboard(button, text) {
+            navigator.clipboard.writeText(text).then(() => {
+                // Add copied class for animation
+                button.classList.add('copied');
+                
+                // Change icon to checkmark
+                button.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="20,6 9,17 4,12"></polyline>
+                </svg>`;
+                
+                // Show success message
+                showCopySuccess(button);
+
+                setTimeout(() => {
+                    button.classList.remove('copied');
+                    button.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                    </svg>`;
+                }, 2000);
+            });
+        }
+
+        function showCopySuccess(button) {
+            const successMsg = document.createElement('div');
+            successMsg.style.cssText = `
+                position: absolute;
+                top: -40px;
+                left: 50%;
+                transform: translateX(-50%);
+                background: #10b981;
+                color: white;
+                padding: 0.5rem 0.75rem;
+                border-radius: 6px;
+                font-size: 0.75rem;
+                white-space: nowrap;
+                z-index: 1000;
+                animation: fadeInOut 2s ease;
+                pointer-events: none;
+            `;
+            successMsg.textContent = 'Copied!';
+            
+            // Add fadeInOut animation
+            const style = document.createElement('style');
+            style.textContent = `
+                @keyframes fadeInOut {
+                    0% { opacity: 0; transform: translateX(-50%) translateY(10px); }
+                    20%, 80% { opacity: 1; transform: translateX(-50%) translateY(0); }
+                    100% { opacity: 0; transform: translateX(-50%) translateY(-10px); }
+                }
+            `;
+            document.head.appendChild(style);
+            
+            button.parentNode.style.position = 'relative';
+            button.parentNode.appendChild(successMsg);
+            
+            setTimeout(() => {
+                if (successMsg.parentNode) {
+                    successMsg.parentNode.removeChild(successMsg);
+                }
+                document.head.removeChild(style);
+            }, 2000);
+        }
+
+        // Global variable to store current calendar data
+        let currentCalendar = [];
+        let currentEditIndex = -1;
+
+        // Create post card with proper event handling
+        function createPostCard(post, index) {
+            const postDate = new Date(post.date).toLocaleDateString('en-US', {
+                weekday: 'long',
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+            });
+
+            const badgeText = post.type === 'festival' ? '🎉 ' + (post.holiday || 'Festival') : '💼 ' + (post.postType || 'Business');
+
+            return `
+                <div class="post-card">
+                    <div class="post-header">
+                        <div class="post-date">
+                            📅 ${postDate}
+                        </div>
+                        <div class="post-badge-container">
+                            <div class="post-badge">
+                                ${badgeText}
+                            </div>
+                            <button class="edit-btn" onclick="openEditModal(${index})" title="Edit post">
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                                </svg>
+                            </button>
+                            <div style="position: relative;">
+                                <button class="ai-bot-btn" onclick="toggleAIBotPopup(${index})" title="AI Assistant">
+                                    🤖
+                                </button>
+                                <div class="ai-bot-popup" id="aiPopup${index}">
+                                    <div class="ai-processing-overlay" id="aiProcessing${index}">
+                                        <div class="ai-processing-spinner"></div>
+                                        <div class="ai-processing-text">AI is thinking...</div>
+                                    </div>
+                                    
+                                    <div class="ai-popup-header">
+                                        <div class="ai-popup-title">
+                                            <div class="ai-avatar" id="aiAvatar${index}">🤖</div>
+                                            <div>
+                                                <div>AI Assistant</div>
+                                                <div class="ai-status-indicator" id="aiStatus${index}">Ready to help</div>
+                                            </div>
+                                        </div>
+                                        <button class="ai-popup-close" onclick="closeAIBotPopup(${index})">×</button>
+                                    </div>
+                                    
+                                    <div class="ai-popup-content">
+                                        <div class="ai-suggestions">
+                                            <button class="ai-suggestion-btn" onclick="sendAIRequest(${index}, 'Make more engaging')">More Engaging</button>
+                                            <button class="ai-suggestion-btn" onclick="sendAIRequest(${index}, 'Add motivation')">Add Motivation</button>
+                                            <button class="ai-suggestion-btn" onclick="sendAIRequest(${index}, 'More professional')">Professional</button>
+                                            <button class="ai-suggestion-btn" onclick="sendAIRequest(${index}, 'Add call to action')">Call-to-Action</button>
+                                            <button class="ai-suggestion-btn" onclick="sendAIRequest(${index}, 'Make shorter')">Make Shorter</button>
+                                            <button class="ai-suggestion-btn" onclick="sendAIRequest(${index}, 'Add emojis')">Add Emojis</button>
+                                        </div>
+                                        
+                                        <div class="ai-chat-area" id="aiChatArea${index}">
+                                            <div class="ai-chat-message bot">
+                                                👋 Hi! I can help improve this post. What would you like to change?
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="ai-chat-input-area">
+                                            <input type="text" class="ai-chat-input" id="aiChatInput${index}" placeholder="Ask me anything..." onkeypress="handleAIChatKeyPress(event, ${index})">
+                                            <button class="ai-chat-send" id="aiChatSend${index}" onclick="sendAIRequest(${index})">Send</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="post-content" id="postContent${index}">
+                        <button class="copy-btn" id="copyBtn${index}" title="Copy to clipboard">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                            </svg>
+                        </button>
+                        ${post.post}
+                    </div>
+                    
+                    <!-- Post Analytics -->
+                    <div class="post-analytics">
+                        <div class="analytics-grid">
+                            <div class="analytics-item">
+                                <div class="analytics-value">${calculatePostEngagement(post)}</div>
+                                <div class="analytics-label">Engagement Score</div>
+                            </div>
+                            <div class="analytics-item">
+                                <div class="analytics-value">${post.post.length}</div>
+                                <div class="analytics-label">Characters</div>
+                            </div>
+                            <div class="analytics-item">
+                                <div class="analytics-value">${(post.post.match(/#\\w+/g) || []).length}</div>
+                                <div class="analytics-label">Hashtags</div>
+                            </div>
+                            <div class="analytics-item">
+                                <div class="analytics-value">${getBestPostingTime()}</div>
+                                <div class="analytics-label">Best Time</div>
+                            </div>
+                        </div>
+                        
+                        <!-- Character Counter -->
+                        <div class="character-counter">
+                            <span>LinkedIn Limit:</span>
+                            <div class="character-bar">
+                                <div class="character-fill" style="width: ${Math.min((post.post.length / 3000) * 100, 100)}%"></div>
+                            </div>
+                            <span>${post.post.length}/3000</span>
+                        </div>
+                        
+                        <!-- Hashtag Suggestions -->
+                        <div class="hashtag-suggestions">
+                            <div style="color: rgba(255, 255, 255, 0.8); font-size: 0.9rem; margin-bottom: 0.5rem;">Trending Hashtags:</div>
+                            <div class="hashtag-list">
+                                ${generateHashtagSuggestions(post).map(tag => 
+                                    `<div class="hashtag-item">
+                                        #${tag.name}
+                                        <span class="hashtag-popularity">${tag.popularity}</span>
+                                    </div>`
+                                ).join('')}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Edit functionality
+        function openEditModal(postIndex) {
+            currentEditIndex = postIndex;
+            const post = currentCalendar[postIndex];
+            
+            document.getElementById('editPostContent').value = post.post;
+            document.getElementById('editModal').style.display = 'block';
+        }
+
+        function closeEditModal() {
+            document.getElementById('editModal').style.display = 'none';
+            currentEditIndex = -1;
+        }
+
+        // Handle edit form submission
+        document.getElementById('editForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            
+            if (currentEditIndex >= 0) {
+                const newContent = document.getElementById('editPostContent').value;
+                currentCalendar[currentEditIndex].post = newContent;
+                
+                // Refresh the results display
+                showResults(currentCalendar);
+                closeEditModal();
+            }
+        });
+
+        // Close edit modal when clicking outside
+        window.onclick = function (event) {
+            const editModal = document.getElementById('editModal');
+            
+            if (event.target === editModal) {
+                closeEditModal();
+            }
+        }
+
+        // AI Bot Popup Functions
+        function toggleAIBotPopup(postIndex) {
+            const popup = document.getElementById(`aiPopup${postIndex}`);
+            const isVisible = popup.style.display === 'block';
+            
+            // Close all other popups
+            document.querySelectorAll('.ai-bot-popup').forEach(p => {
+                p.style.display = 'none';
+            });
+            
+            // Toggle current popup
+            if (!isVisible) {
+                popup.style.display = 'block';
+                updateContextualSuggestions(postIndex);
+            }
+        }
+
+        // Update suggestions based on post context
+        function updateContextualSuggestions(postIndex) {
+            const post = currentCalendar[postIndex];
+            const suggestionsContainer = document.querySelector(`#aiPopup${postIndex} .ai-suggestions`);
+            
+            let suggestions = [];
+            
+            if (post.type === 'festival') {
+                suggestions = [
+                    { text: 'More Festive', action: 'Make this more festive and celebratory' },
+                    { text: 'Add Tradition', action: 'Include cultural traditions and customs' },
+                    { text: 'Community Focus', action: 'Emphasize community and togetherness' },
+                    { text: 'Gratitude Tone', action: 'Add more gratitude and appreciation' },
+                    { text: 'Call to Action', action: 'Add a meaningful call-to-action' },
+                    { text: 'Add Emojis', action: 'Include relevant festive emojis' }
+                ];
+            } else {
+                const businessType = post.postType || 'service';
+                if (businessType === 'motivation') {
+                    suggestions = [
+                        { text: 'More Inspiring', action: 'Make this more motivational and inspiring' },
+                        { text: 'Add Statistics', action: 'Include relevant business statistics' },
+                        { text: 'Success Stories', action: 'Add success story elements' },
+                        { text: 'Action Steps', action: 'Include actionable steps' },
+                        { text: 'Professional Tone', action: 'Make it more professional' },
+                        { text: 'Engagement Hook', action: 'Add an engaging opening hook' }
+                    ];
+                } else {
+                    suggestions = [
+                        { text: 'More Engaging', action: 'Make this more engaging and compelling' },
+                        { text: 'Add Benefits', action: 'Highlight key benefits and value' },
+                        { text: 'Professional', action: 'Make it more professional' },
+                        { text: 'Call-to-Action', action: 'Add a strong call-to-action' },
+                        { text: 'Make Shorter', action: 'Make this more concise' },
+                        { text: 'Add Credibility', action: 'Include credibility indicators' }
+                    ];
+                }
+            }
+            
+            // Update suggestion buttons
+            suggestionsContainer.innerHTML = suggestions.map(suggestion => 
+                `<button class="ai-suggestion-btn" onclick="sendAIRequest(${postIndex}, '${suggestion.action}')">${suggestion.text}</button>`
+            ).join('');
+        }
+
+        function closeAIBotPopup(postIndex) {
+            document.getElementById(`aiPopup${postIndex}`).style.display = 'none';
+        }
+
+        function handleAIChatKeyPress(event, postIndex) {
+            if (event.key === 'Enter') {
+                sendAIRequest(postIndex);
+            }
+        }
+
+        async function sendAIRequest(postIndex, quickMessage = null) {
+            const chatInput = document.getElementById(`aiChatInput${postIndex}`);
+            const chatArea = document.getElementById(`aiChatArea${postIndex}`);
+            const sendBtn = document.getElementById(`aiChatSend${postIndex}`);
+            const popup = document.getElementById(`aiPopup${postIndex}`);
+            const processingOverlay = document.getElementById(`aiProcessing${postIndex}`);
+            const aiAvatar = document.getElementById(`aiAvatar${postIndex}`);
+            const aiStatus = document.getElementById(`aiStatus${postIndex}`);
+            const aiButton = document.querySelector(`[onclick="toggleAIBotPopup(${postIndex})"]`);
+            
+            const message = quickMessage || chatInput.value.trim();
+            if (!message) return;
+
+            // Clear input if it's a manual message
+            if (!quickMessage) {
+                chatInput.value = '';
+            }
+
+            // Add user message to chat with enhanced formatting
+            const userMessage = document.createElement('div');
+            userMessage.className = 'ai-chat-message user';
+            userMessage.innerHTML = formatMessage(message);
+            chatArea.appendChild(userMessage);
+
+            // Show typing indicator
+            const typingIndicator = document.createElement('div');
+            typingIndicator.className = 'typing-indicator';
+            typingIndicator.innerHTML = `
+                <div class="typing-dots">
+                    <div class="typing-dot"></div>
+                    <div class="typing-dot"></div>
+                    <div class="typing-dot"></div>
+                </div>
+                <span>AI is thinking...</span>
+            `;
+            chatArea.appendChild(typingIndicator);
+
+            // Update AI status and animations
+            aiStatus.textContent = 'Thinking...';
+            aiAvatar.classList.add('thinking');
+            if (aiButton) {
+                aiButton.classList.add('thinking');
+            }
+            
+            // Show processing animation
+            processingOverlay.style.display = 'flex';
+            popup.classList.add('processing');
+            sendBtn.disabled = true;
+
+            // Scroll to bottom
+            chatArea.scrollTop = chatArea.scrollHeight;
+
+            try {
+                // Get current post content
+                const currentPost = currentCalendar[postIndex];
+                
+                // Prepare AI request
+                const aiRequest = {
+                    currentPost: currentPost.post,
+                    userRequest: message,
+                    postType: currentPost.type,
+                    holiday: currentPost.holiday,
+                    postTypeCategory: currentPost.postType
+                };
+
+                // Call AI improvement endpoint
+                const response = await fetch('/.netlify/functions/improve-post', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(aiRequest)
+                });
+
+                const result = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(result.error || result.details || 'Failed to get AI response');
+                }
+
+                // Remove typing indicator
+                if (typingIndicator.parentNode) {
+                    typingIndicator.parentNode.removeChild(typingIndicator);
+                }
+
+                if (result.success) {
+                    // Add bot response with enhanced formatting
+                    const botMessage = document.createElement('div');
+                    botMessage.className = 'ai-chat-message bot';
+                    
+                    // Create explanation div with formatting
+                    const explanationDiv = document.createElement('div');
+                    explanationDiv.innerHTML = formatMessage(result.explanation);
+                    botMessage.appendChild(explanationDiv);
+                    
+                    // Create apply button if there's an improved post
+                    if (result.improvedPost) {
+                        const applyBtn = document.createElement('button');
+                        applyBtn.className = 'ai-apply-btn';
+                        applyBtn.textContent = 'Apply Changes';
+                        applyBtn.onclick = function() {
+                            applyAIChangesToPost(postIndex, result.improvedPost);
+                        };
+                        botMessage.appendChild(applyBtn);
+                    }
+                    
+                    chatArea.appendChild(botMessage);
+                    
+                    // Update AI status
+                    aiStatus.textContent = 'Ready to help';
+                    aiAvatar.classList.remove('thinking');
+                    if (aiButton) {
+                        aiButton.classList.remove('thinking');
+                    }
+                } else {
+                    throw new Error(result.error || 'Failed to get AI response');
+                }
+            } catch (error) {
+                // Remove typing indicator
+                if (typingIndicator.parentNode) {
+                    typingIndicator.parentNode.removeChild(typingIndicator);
+                }
+                
+                // Add error message
+                const errorMessage = document.createElement('div');
+                errorMessage.className = 'ai-chat-message bot';
+                errorMessage.innerHTML = `
+                    <div>Sorry, I'm having trouble right now. Try these suggestions:</div>
+                    <div style="margin-top: 0.25rem; font-size: 0.75em;">
+                        • Add specific details about your services<br>
+                        • Include a clear call-to-action<br>
+                        • Use emojis for engagement
+                    </div>
+                `;
+                chatArea.appendChild(errorMessage);
+                
+                // Reset AI status
+                aiStatus.textContent = 'Ready to help';
+                aiAvatar.classList.remove('thinking');
+                if (aiButton) {
+                    aiButton.classList.remove('thinking');
+                }
+            }
+
+            // Hide processing animation
+            processingOverlay.style.display = 'none';
+            popup.classList.remove('processing');
+            sendBtn.disabled = false;
+
+            // Scroll to bottom
+            chatArea.scrollTop = chatArea.scrollHeight;
+        }
+
+        // Message formatting with syntax highlighting
+        function formatMessage(message) {
+            return message
+                .replace(/#(\w+)/g, '<span class="hashtag">#$1</span>')
+                .replace(/@(\w+)/g, '<span class="mention">@$1</span>')
+                .replace(/([\u{1F600}-\u{1F64F}]|[\u{1F300}-\u{1F5FF}]|[\u{1F680}-\u{1F6FF}]|[\u{1F1E0}-\u{1F1FF}])/gu, '<span class="emoji">$1</span>');
+        }
+
+        function applyAIChangesToPost(postIndex, improvedPost) {
+            // Update the post content in the calendar
+            currentCalendar[postIndex].post = improvedPost;
+            
+            // Refresh the results display
+            showResults(currentCalendar);
+            
+            // Close the AI popup
+            closeAIBotPopup(postIndex);
+            
+            // Show success message briefly
+            const popup = document.getElementById(`aiPopup${postIndex}`);
+            const successMsg = document.createElement('div');
+            successMsg.style.cssText = 'position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #10b981; color: white; padding: 0.5rem 1rem; border-radius: 6px; font-size: 0.8rem; z-index: 20;';
+            successMsg.textContent = '✅ Post Updated!';
+            popup.appendChild(successMsg);
+            
+            setTimeout(() => {
+                if (successMsg.parentNode) {
+                    successMsg.parentNode.removeChild(successMsg);
+                }
+            }, 2000);
+        }
+
+        // Close AI popups when clicking outside
+        document.addEventListener('click', function(event) {
+            if (!event.target.closest('.ai-bot-btn') && !event.target.closest('.ai-bot-popup')) {
+                document.querySelectorAll('.ai-bot-popup').forEach(popup => {
+                    popup.style.display = 'none';
+                });
+            }
+        });
+
+        // Content Management Features
+        let currentView = 'list';
+        let currentFilter = 'all';
+        let currentCalendarDate = new Date();
+
+        function calculateAverageEngagement(calendar) {
+            // Simple engagement prediction based on post characteristics
+            let totalScore = 0;
+            calendar.forEach(post => {
+                let score = 75; // Base score
+                
+                // Festival posts typically get higher engagement
+                if (post.type === 'festival') score += 15;
+                
+                // Posts with optimal length (100-300 chars) score higher
+                const length = post.post.length;
+                if (length >= 100 && length <= 300) score += 10;
+                else if (length > 500) score -= 10;
+                
+                // Posts with hashtags score higher
+                const hashtagCount = (post.post.match(/#\w+/g) || []).length;
+                score += Math.min(hashtagCount * 3, 15);
+                
+                // Posts with emojis score higher
+                const emojiCount = (post.post.match(/[\u{1F600}-\u{1F64F}]|[\u{1F300}-\u{1F5FF}]|[\u{1F680}-\u{1F6FF}]|[\u{1F1E0}-\u{1F1FF}]/gu) || []).length;
+                score += Math.min(emojiCount * 2, 10);
+                
+                totalScore += Math.min(score, 100);
+            });
+            
+            return Math.round(totalScore / calendar.length);
+        }
+
+        function filterPosts(type) {
+            currentFilter = type;
+            
+            // Update active filter button
+            document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+            
+            renderPostsList();
+        }
+
+        function searchPosts(query) {
+            renderPostsList(query.toLowerCase());
+        }
+
+        function switchView(view) {
+            currentView = view;
+            
+            // Update active view button
+            document.querySelectorAll('.view-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+            
+            if (view === 'calendar') {
+                document.getElementById('calendarView').style.display = 'block';
+                document.getElementById('postsListView').style.display = 'none';
+                renderCalendarView();
+            } else {
+                document.getElementById('calendarView').style.display = 'none';
+                document.getElementById('postsListView').style.display = 'block';
+                renderPostsList();
+            }
+        }
+
+        function renderPostsList(searchQuery = '') {
+            const container = document.getElementById('postsListView');
+            let filteredPosts = currentCalendar;
+            
+            // Apply filters
+            if (currentFilter !== 'all') {
+                filteredPosts = filteredPosts.filter(post => post.type === currentFilter);
+            }
+            
+            // Apply search
+            if (searchQuery) {
+                filteredPosts = filteredPosts.filter(post => 
+                    post.post.toLowerCase().includes(searchQuery) ||
+                    (post.holiday && post.holiday.toLowerCase().includes(searchQuery)) ||
+                    (post.postType && post.postType.toLowerCase().includes(searchQuery))
+                );
+            }
+            
+            container.innerHTML = filteredPosts.map((post, index) => {
+                const originalIndex = currentCalendar.indexOf(post);
+                return createPostCard(post, originalIndex);
+            }).join('');
+            
+            // Re-attach event listeners
+            setTimeout(() => {
+                filteredPosts.forEach((post, index) => {
+                    const originalIndex = currentCalendar.indexOf(post);
+                    const copyBtn = document.getElementById(`copyBtn${originalIndex}`);
+                    if (copyBtn) {
+                        copyBtn.addEventListener('click', function() {
+                            copyToClipboard(this, post.post);
+                        });
+                    }
+                });
+            }, 50);
+        }
+
+        function renderCalendarView() {
+            const grid = document.getElementById('calendarGrid');
+            const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
+                'July', 'August', 'September', 'October', 'November', 'December'];
+            
+            document.getElementById('currentMonth').textContent = 
+                `${monthNames[currentCalendarDate.getMonth()]} ${currentCalendarDate.getFullYear()}`;
+            
+            const firstDay = new Date(currentCalendarDate.getFullYear(), currentCalendarDate.getMonth(), 1);
+            const lastDay = new Date(currentCalendarDate.getFullYear(), currentCalendarDate.getMonth() + 1, 0);
+            const startDate = new Date(firstDay);
+            startDate.setDate(startDate.getDate() - firstDay.getDay());
+            
+            let calendarHTML = '';
+            const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+            
+            // Add day headers
+            dayNames.forEach(day => {
+                calendarHTML += `<div class="calendar-day" style="background: rgba(6, 182, 212, 0.2); font-weight: 600; text-align: center; padding: 0.5rem;">
+                    ${day}
+                </div>`;
+            });
+            
+            // Add calendar days
+            for (let i = 0; i < 42; i++) {
+                const currentDay = new Date(startDate);
+                currentDay.setDate(startDate.getDate() + i);
+                
+                const dayPosts = currentCalendar.filter(post => {
+                    const postDate = new Date(post.date);
+                    return postDate.toDateString() === currentDay.toDateString();
+                });
+                
+                const isCurrentMonth = currentDay.getMonth() === currentCalendarDate.getMonth();
+                const hasPost = dayPosts.length > 0;
+                
+                calendarHTML += `
+                    <div class="calendar-day ${hasPost ? 'has-post' : ''}" 
+                         style="opacity: ${isCurrentMonth ? 1 : 0.5}">
+                        <div class="day-number">${currentDay.getDate()}</div>
+                        <div class="day-posts">
+                            ${dayPosts.map(post => `
+                                <div class="calendar-post-indicator" onclick="showPostDetails(${currentCalendar.indexOf(post)})">
+                                    ${post.type === 'festival' ? '🎉' : '💼'} ${post.type}
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                `;
+            }
+            
+            grid.innerHTML = calendarHTML;
+        }
+
+        function previousMonth() {
+            currentCalendarDate.setMonth(currentCalendarDate.getMonth() - 1);
+            renderCalendarView();
+        }
+
+        function nextMonth() {
+            currentCalendarDate.setMonth(currentCalendarDate.getMonth() + 1);
+            renderCalendarView();
+        }
+
+        function showPostDetails(index) {
+            // Scroll to post in list view
+            switchView('list');
+            setTimeout(() => {
+                const postCard = document.querySelector(`[data-post-index="${index}"]`);
+                if (postCard) {
+                    postCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    postCard.style.animation = 'highlightPost 2s ease';
+                }
+            }, 100);
+        }
+
+        function exportToPDF() {
+            // Create PDF content
+            const content = currentCalendar.map(post => {
+                const date = new Date(post.date).toLocaleDateString();
+                const type = post.type === 'festival' ? `Festival: ${post.holiday}` : `Business: ${post.postType}`;
+                return `Date: ${date}\nType: ${type}\n\n${post.post}\n\n${'='.repeat(50)}\n\n`;
+            }).join('');
+            
+            // Create and download
+            const blob = new Blob([content], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `linkedin-posts-${new Date().toISOString().split('T')[0]}.txt`;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        function exportToCSV() {
+            const headers = ['Date', 'Type', 'Holiday/Category', 'Content', 'Character Count', 'Hashtags'];
+            const rows = currentCalendar.map(post => {
+                const hashtags = (post.post.match(/#\w+/g) || []).join(' ');
+                return [
+                    post.date,
+                    post.type,
+                    post.holiday || post.postType || '',
+                    `"${post.post.replace(/"/g, '""')}"`,
+                    post.post.length,
+                    hashtags
+                ];
+            });
+            
+            const csvContent = [headers, ...rows].map(row => row.join(',')).join('\n');
+            const blob = new Blob([csvContent], { type: 'text/csv' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `linkedin-posts-${new Date().toISOString().split('T')[0]}.csv`;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        // Analytics Helper Functions
+        function calculatePostEngagement(post) {
+            let score = 75; // Base score
+            
+            // Festival posts typically get higher engagement
+            if (post.type === 'festival') score += 15;
+            
+            // Posts with optimal length (100-300 chars) score higher
+            const length = post.post.length;
+            if (length >= 100 && length <= 300) score += 10;
+            else if (length > 500) score -= 10;
+            
+            // Posts with hashtags score higher
+            const hashtagCount = (post.post.match(/#\w+/g) || []).length;
+            score += Math.min(hashtagCount * 3, 15);
+            
+            // Posts with emojis score higher
+            const emojiCount = (post.post.match(/[\u{1F600}-\u{1F64F}]|[\u{1F300}-\u{1F5FF}]|[\u{1F680}-\u{1F6FF}]|[\u{1F1E0}-\u{1F1FF}]/gu) || []).length;
+            score += Math.min(emojiCount * 2, 10);
+            
+            // Posts with questions score higher
+            if (post.post.includes('?')) score += 5;
+            
+            // Posts with call-to-action words score higher
+            const ctaWords = ['comment', 'share', 'like', 'follow', 'subscribe', 'join', 'learn', 'discover'];
+            const hasCTA = ctaWords.some(word => post.post.toLowerCase().includes(word));
+            if (hasCTA) score += 8;
+            
+            return Math.min(score, 100);
+        }
+
+        function getBestPostingTime() {
+            const times = ['9:00 AM', '12:00 PM', '1:00 PM', '3:00 PM', '5:00 PM'];
+            return times[Math.floor(Math.random() * times.length)];
+        }
+
+        function generateHashtagSuggestions(post) {
+            const suggestions = [
+                { name: 'LinkedIn', popularity: '95%' },
+                { name: 'Business', popularity: '88%' },
+                { name: 'Professional', popularity: '82%' },
+                { name: 'Networking', popularity: '79%' },
+                { name: 'Career', popularity: '76%' }
+            ];
+            
+            if (post.type === 'festival') {
+                suggestions.unshift(
+                    { name: post.holiday?.replace(/\s+/g, '') || 'Festival', popularity: '92%' },
+                    { name: 'Celebration', popularity: '85%' }
+                );
+            } else {
+                suggestions.unshift(
+                    { name: 'Innovation', popularity: '90%' },
+                    { name: 'Growth', popularity: '87%' }
+                );
+            }
+            
+            return suggestions.slice(0, 5);
+        }
+
+        // Mobile Touch Gestures
+        let touchStartX = 0;
+        let touchStartY = 0;
+
+        document.addEventListener('touchstart', function(e) {
+            touchStartX = e.touches[0].clientX;
+            touchStartY = e.touches[0].clientY;
+        });
+
+        document.addEventListener('touchend', function(e) {
+            if (!touchStartX || !touchStartY) return;
+            
+            const touchEndX = e.changedTouches[0].clientX;
+            const touchEndY = e.changedTouches[0].clientY;
+            
+            const diffX = touchStartX - touchEndX;
+            const diffY = touchStartY - touchEndY;
+            
+            // Horizontal swipe
+            if (Math.abs(diffX) > Math.abs(diffY) && Math.abs(diffX) > 50) {
+                if (diffX > 0) {
+                    // Swipe left - next month in calendar
+                    if (currentView === 'calendar') nextMonth();
+                } else {
+                    // Swipe right - previous month in calendar
+                    if (currentView === 'calendar') previousMonth();
+                }
+            }
+            
+            touchStartX = 0;
+            touchStartY = 0;
+        });
+
+        // Keyboard Navigation
+        document.addEventListener('keydown', function(e) {
+            if (e.ctrlKey || e.metaKey) {
+                switch(e.key) {
+                    case 'f':
+                        e.preventDefault();
+                        document.querySelector('.search-box')?.focus();
+                        break;
+                    case 'e':
+                        e.preventDefault();
+                        exportToPDF();
+                        break;
+                    case '1':
+                        e.preventDefault();
+                        switchView('list');
+                        break;
+                    case '2':
+                        e.preventDefault();
+                        switchView('calendar');
+                        break;
+                }
+            }
+            
+            if (currentView === 'calendar') {
+                switch(e.key) {
+                    case 'ArrowLeft':
+                        e.preventDefault();
+                        previousMonth();
+                        break;
+                    case 'ArrowRight':
+                        e.preventDefault();
+                        nextMonth();
+                        break;
+                }
+            }
+        });
+
+        // Add highlight animation
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes highlightPost {
+                0%, 100% { background: rgba(255, 255, 255, 0.1); }
+                50% { background: rgba(6, 182, 212, 0.3); }
+            }
+        `;
+        document.head.appendChild(style);
+    </script>
+</body>
+
+</html>

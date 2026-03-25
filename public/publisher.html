@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Publishing Hub - PostCraft AI</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 45%, #475569 100%);
+            color: #fff;
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 1240px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        .topbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+        .nav-link {
+            color: #fff;
+            text-decoration: none;
+            padding: 0.8rem 1.2rem;
+            border: 1px solid rgba(255,255,255,0.18);
+            border-radius: 999px;
+            background: rgba(255,255,255,0.08);
+        }
+        .hero h1 {
+            font-size: clamp(2rem, 5vw, 3.6rem);
+            margin-bottom: 0.8rem;
+        }
+        .hero p {
+            color: rgba(255,255,255,0.75);
+            max-width: 780px;
+            line-height: 1.6;
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(12, 1fr);
+            gap: 1.2rem;
+            margin-top: 2rem;
+        }
+        .card {
+            background: rgba(255,255,255,0.08);
+            border: 1px solid rgba(255,255,255,0.12);
+            border-radius: 24px;
+            padding: 1.25rem;
+            backdrop-filter: blur(10px);
+        }
+        .card h2 {
+            font-size: 1.1rem;
+            margin-bottom: 0.8rem;
+        }
+        .card p {
+            color: rgba(255,255,255,0.72);
+            line-height: 1.5;
+            margin-bottom: 1rem;
+        }
+        .span-4 { grid-column: span 4; }
+        .span-5 { grid-column: span 5; }
+        .span-7 { grid-column: span 7; }
+        .span-12 { grid-column: span 12; }
+        form {
+            display: grid;
+            gap: 0.85rem;
+        }
+        .row-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.85rem;
+        }
+        label {
+            display: grid;
+            gap: 0.35rem;
+            font-size: 0.9rem;
+            color: rgba(255,255,255,0.9);
+        }
+        input, select, textarea, button {
+            font: inherit;
+        }
+        input, select, textarea {
+            width: 100%;
+            padding: 0.85rem 0.95rem;
+            border-radius: 14px;
+            border: 1px solid rgba(255,255,255,0.14);
+            background: rgba(15,23,42,0.55);
+            color: #fff;
+        }
+        textarea {
+            min-height: 110px;
+            resize: vertical;
+        }
+        button {
+            border: none;
+            border-radius: 14px;
+            padding: 0.9rem 1rem;
+            background: linear-gradient(135deg, #06b6d4, #2563eb);
+            color: #fff;
+            font-weight: 700;
+            cursor: pointer;
+        }
+        .secondary {
+            background: rgba(255,255,255,0.12);
+            border: 1px solid rgba(255,255,255,0.14);
+        }
+        .list {
+            display: grid;
+            gap: 0.8rem;
+        }
+        .list-item {
+            background: rgba(15,23,42,0.45);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 18px;
+            padding: 1rem;
+        }
+        .list-item h3 {
+            font-size: 1rem;
+            margin-bottom: 0.35rem;
+        }
+        .meta {
+            color: rgba(255,255,255,0.65);
+            font-size: 0.88rem;
+            line-height: 1.45;
+        }
+        .pill {
+            display: inline-block;
+            padding: 0.3rem 0.65rem;
+            border-radius: 999px;
+            background: rgba(34,197,94,0.2);
+            color: #86efac;
+            font-size: 0.78rem;
+            margin-bottom: 0.6rem;
+        }
+        .pill.failed {
+            background: rgba(239,68,68,0.2);
+            color: #fca5a5;
+        }
+        .pill.scheduled {
+            background: rgba(59,130,246,0.2);
+            color: #93c5fd;
+        }
+        .actions {
+            display: flex;
+            gap: 0.6rem;
+            margin-top: 0.8rem;
+            flex-wrap: wrap;
+        }
+        .small {
+            padding: 0.55rem 0.8rem;
+            border-radius: 12px;
+            font-size: 0.9rem;
+        }
+        .banner {
+            margin-top: 1rem;
+            padding: 0.9rem 1rem;
+            border-radius: 16px;
+            background: rgba(250, 204, 21, 0.12);
+            border: 1px solid rgba(250, 204, 21, 0.2);
+            color: #fde68a;
+            line-height: 1.5;
+        }
+        .success-banner {
+            margin-top: 1rem;
+            padding: 0.9rem 1rem;
+            border-radius: 16px;
+            background: rgba(34, 197, 94, 0.14);
+            border: 1px solid rgba(34, 197, 94, 0.26);
+            color: #bbf7d0;
+            line-height: 1.5;
+            display: none;
+        }
+        .oauth-card {
+            display: grid;
+            gap: 0.8rem;
+            margin-bottom: 1rem;
+            padding: 1rem;
+            border-radius: 18px;
+            background: rgba(15,23,42,0.45);
+            border: 1px solid rgba(255,255,255,0.08);
+        }
+        .oauth-actions {
+            display: flex;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        .oauth-status {
+            color: rgba(255,255,255,0.75);
+            font-size: 0.92rem;
+            line-height: 1.5;
+        }
+        @media (max-width: 960px) {
+            .span-4, .span-5, .span-7, .span-12 { grid-column: span 12; }
+            .row-2 { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="topbar">
+            <a class="nav-link" href="/index.html?skipIntro=1">Back to Home</a>
+            <a class="nav-link" href="/generator.html?platform=linkedin">Open Generator</a>
+        </div>
+
+        <section class="hero">
+            <h1>Publishing Hub</h1>
+            <p>Connect a LinkedIn account, auto-generate 7 to 10 posts per week, and publish on a schedule.</p>
+        </section>
+
+        <div class="banner">
+            LinkedIn publishing uses direct user login so the user can connect the right account before scheduling posts.
+        </div>
+
+        <div class="success-banner" id="oauthBanner"></div>
+
+        <div class="grid">
+            <section class="card span-5">
+                <h2>Connect Accounts</h2>
+                <p>Use LinkedIn login to connect the account that should be used for scheduling and publishing.</p>
+                <div class="oauth-card">
+                    <h3>LinkedIn Login</h3>
+                    <div class="oauth-status" id="linkedinOAuthStatus">Checking LinkedIn OAuth configuration...</div>
+                    <div class="oauth-actions">
+                        <a class="nav-link" id="linkedinLoginBtn" href="/.netlify/functions/linkedin-oauth-start">Connect with LinkedIn</a>
+                    </div>
+                    <div class="meta">After the user signs in with LinkedIn, the app saves the LinkedIn access token and member author URN automatically.</div>
+                </div>
+            </section>
+
+            <section class="card span-7">
+                <h2>Create Weekly Schedule</h2>
+                <p>Generate a weekly publishing queue from your business context. The scheduler can spread 7 to 10 items per week across the selected platform.</p>
+                <form id="scheduleForm">
+                    <div class="row-2">
+                        <label>Platform
+                            <select name="platform" id="schedulePlatform">
+                                <option value="linkedin">LinkedIn</option>
+                            </select>
+                        </label>
+                        <label>Connected Account
+                            <select name="accountId" id="accountId" required></select>
+                        </label>
+                    </div>
+                    <div class="row-2">
+                        <label>Posts Per Week
+                            <select name="postsPerWeek">
+                                <option value="7">7</option>
+                                <option value="8">8</option>
+                                <option value="9">9</option>
+                                <option value="10">10</option>
+                            </select>
+                        </label>
+                        <label>Preferred Hour
+                            <input type="number" name="preferredHour" min="0" max="23" value="10">
+                        </label>
+                    </div>
+                    <div class="row-2">
+                        <label>Start Date
+                            <input type="date" name="startDate" id="startDate">
+                        </label>
+                        <label>End Date
+                            <input type="date" name="endDate" id="endDate">
+                        </label>
+                    </div>
+                    <label>Country Code
+                        <select name="countryCode" id="countryCodeSelect">
+                            <option value="US">US - United States</option>
+                        </select>
+                    </label>
+                    <div class="row-2">
+                        <label>Company / Brand Name
+                            <input name="companyName" placeholder="Craft AI" required>
+                        </label>
+                        <label>Industry
+                            <input name="industry" placeholder="AI SaaS" required>
+                        </label>
+                    </div>
+                    <label>Website or Profile Link
+                        <input name="website" placeholder="https://yourbrand.com">
+                    </label>
+                    <label>Services / Products
+                        <textarea name="services" placeholder="Website development&#10;AI agents&#10;Marketing automation" required></textarea>
+                    </label>
+                    <button type="submit">Create Schedule And Generate Queue</button>
+                </form>
+            </section>
+
+            <section class="card span-4">
+                <h2>Connected Accounts</h2>
+                <div id="accountsList" class="list"></div>
+            </section>
+
+            <section class="card span-4">
+                <h2>Weekly Schedules</h2>
+                <div id="schedulesList" class="list"></div>
+            </section>
+
+            <section class="card span-4">
+                <h2>Publishing Queue</h2>
+                <div id="queueList" class="list"></div>
+            </section>
+        </div>
+    </div>
+
+    <script>
+        const apiEndpoints = {
+            countries: '/.netlify/functions/countries',
+            publishingOverview: '/.netlify/functions/publishing-overview',
+            publishingProviders: '/.netlify/functions/publishing-providers',
+            publishingSchedules: '/.netlify/functions/publishing-schedules',
+            publishQueueItem: (queueItemId) => `/.netlify/functions/publishing-queue-publish?id=${encodeURIComponent(queueItemId)}`,
+            linkedInLogin: '/.netlify/functions/linkedin-oauth-start'
+        };
+
+        const scheduleForm = document.getElementById('scheduleForm');
+        const accountIdSelect = document.getElementById('accountId');
+        const schedulePlatformSelect = document.getElementById('schedulePlatform');
+        const startDateInput = document.getElementById('startDate');
+        const endDateInput = document.getElementById('endDate');
+        const countryCodeSelect = document.getElementById('countryCodeSelect');
+        const oauthBanner = document.getElementById('oauthBanner');
+        const linkedinOAuthStatus = document.getElementById('linkedinOAuthStatus');
+        const linkedinLoginBtn = document.getElementById('linkedinLoginBtn');
+        let allAccounts = [];
+
+        linkedinLoginBtn.href = apiEndpoints.linkedInLogin;
+
+        const today = new Date();
+        const defaultEndDate = new Date(today);
+        defaultEndDate.setDate(defaultEndDate.getDate() + 27);
+
+        startDateInput.value = today.toISOString().split('T')[0];
+        endDateInput.value = defaultEndDate.toISOString().split('T')[0];
+
+        function showOAuthBanner(message, isError = false) {
+            oauthBanner.style.display = 'block';
+            oauthBanner.textContent = message;
+
+            if (isError) {
+                oauthBanner.style.background = 'rgba(239, 68, 68, 0.14)';
+                oauthBanner.style.borderColor = 'rgba(239, 68, 68, 0.26)';
+                oauthBanner.style.color = '#fecaca';
+                return;
+            }
+
+            oauthBanner.style.background = 'rgba(34, 197, 94, 0.14)';
+            oauthBanner.style.borderColor = 'rgba(34, 197, 94, 0.26)';
+            oauthBanner.style.color = '#bbf7d0';
+        }
+
+        async function loadCountryOptions() {
+            try {
+                const response = await fetch(apiEndpoints.countries);
+                const countries = await response.json();
+                if (!Array.isArray(countries) || !countries.length) {
+                    return;
+                }
+
+                const previousValue = countryCodeSelect.value || 'US';
+                const normalizedCountries = countries
+                    .map((item) => ({
+                        code: String(item.countryCode || '').toUpperCase(),
+                        name: String(item.name || '').trim()
+                    }))
+                    .filter((item) => item.code && item.name)
+                    .sort((a, b) => a.name.localeCompare(b.name));
+
+                if (!normalizedCountries.length) {
+                    return;
+                }
+
+                countryCodeSelect.innerHTML = normalizedCountries
+                    .map((item) => `<option value="${item.code}">${item.code} - ${item.name}</option>`)
+                    .join('');
+
+                const hasPrevious = normalizedCountries.some((item) => item.code === previousValue);
+                if (hasPrevious) {
+                    countryCodeSelect.value = previousValue;
+                    return;
+                }
+
+                const hasUS = normalizedCountries.some((item) => item.code === 'US');
+                countryCodeSelect.value = hasUS ? 'US' : normalizedCountries[0].code;
+            } catch (error) {
+                // Keep the default US option if loading countries fails.
+            }
+        }
+
+        async function loadProviderStatus() {
+            try {
+                const response = await fetch(apiEndpoints.publishingProviders);
+                const result = await response.json();
+                const linkedIn = result.providers?.linkedin;
+
+                if (linkedIn?.oauthConfigured) {
+                    linkedinOAuthStatus.textContent = 'LinkedIn OAuth is ready.';
+                    linkedinLoginBtn.style.pointerEvents = 'auto';
+                    linkedinLoginBtn.style.opacity = '1';
+                } else {
+                    linkedinOAuthStatus.textContent = 'LinkedIn OAuth is not configured yet.';
+                    linkedinLoginBtn.style.pointerEvents = 'none';
+                    linkedinLoginBtn.style.opacity = '0.55';
+                }
+            } catch (error) {
+                linkedinOAuthStatus.textContent = 'Could not verify LinkedIn OAuth configuration right now.';
+            }
+        }
+
+        function handleOAuthResult() {
+            const params = new URLSearchParams(window.location.search);
+            const linkedInStatus = params.get('linkedin');
+            const message = params.get('message');
+
+            if (!linkedInStatus) {
+                return;
+            }
+
+            if (linkedInStatus === 'connected') {
+                showOAuthBanner('LinkedIn account connected successfully. The user can use it for scheduling now.');
+            } else {
+                showOAuthBanner(message || 'LinkedIn login did not complete successfully.', true);
+            }
+
+            params.delete('linkedin');
+            params.delete('message');
+
+            const query = params.toString();
+            const cleanUrl = `${window.location.pathname}${query ? `?${query}` : ''}`;
+            window.history.replaceState({}, document.title, cleanUrl);
+        }
+
+        async function fetchOverview() {
+            const response = await fetch(apiEndpoints.publishingOverview);
+            return response.json();
+        }
+
+        function renderAccounts(accounts) {
+            const container = document.getElementById('accountsList');
+            allAccounts = accounts;
+
+            if (!accounts.length) {
+                container.innerHTML = '<div class="meta">No connected accounts yet.</div>';
+                accountIdSelect.innerHTML = '<option value="">Add an account first</option>';
+                return;
+            }
+
+            updateAccountOptions();
+
+            container.innerHTML = accounts.map((account) => `
+                <article class="list-item">
+                    <span class="pill">${account.platform}</span>
+                    <h3>${account.displayName}</h3>
+                    <div class="meta">
+                        Status: ${account.status}${account.authType ? ` (${account.authType})` : ''}<br>
+                        Saved: ${new Date(account.createdAt).toLocaleString()}
+                    </div>
+                </article>
+            `).join('');
+        }
+
+        function updateAccountOptions() {
+            const selectedPlatform = schedulePlatformSelect.value;
+            const matchingAccounts = allAccounts.filter((account) => account.platform === selectedPlatform);
+
+            if (!matchingAccounts.length) {
+                accountIdSelect.innerHTML = `<option value="">No ${selectedPlatform} account connected</option>`;
+                return;
+            }
+
+            accountIdSelect.innerHTML = matchingAccounts.map((account) => `
+                <option value="${account.id}">${account.displayName} (${account.platform})</option>
+            `).join('');
+        }
+
+        function renderSchedules(schedules) {
+            const container = document.getElementById('schedulesList');
+            if (!schedules.length) {
+                container.innerHTML = '<div class="meta">No schedules yet.</div>';
+                return;
+            }
+
+            container.innerHTML = schedules.map((schedule) => `
+                <article class="list-item">
+                    <span class="pill scheduled">${schedule.platform}</span>
+                    <h3>${schedule.companyName}</h3>
+                    <div class="meta">
+                        ${schedule.postsPerWeek} posts/week<br>
+                        Preferred hour: ${schedule.preferredHour}:00<br>
+                        Start: ${new Date(schedule.startDate).toLocaleDateString()}<br>
+                        End: ${schedule.endDate ? new Date(schedule.endDate).toLocaleDateString() : 'Open-ended'}
+                    </div>
+                </article>
+            `).join('');
+        }
+
+        function renderQueue(queue) {
+            const container = document.getElementById('queueList');
+            if (!queue.length) {
+                container.innerHTML = '<div class="meta">No queue items yet.</div>';
+                return;
+            }
+
+            const sorted = [...queue].sort((a, b) => new Date(a.scheduledFor) - new Date(b.scheduledFor));
+            container.innerHTML = sorted.slice(0, 12).map((item) => `
+                <article class="list-item">
+                    <span class="pill ${item.status === 'failed' ? 'failed' : item.status === 'scheduled' ? 'scheduled' : ''}">${item.status}</span>
+                    <h3>${item.platform} · ${new Date(item.scheduledFor).toLocaleString()}</h3>
+                    <div class="meta">
+                        ${item.content.slice(0, 140).replace(/</g, '&lt;')}${item.content.length > 140 ? '...' : ''}<br>
+                        ${item.error ? `Error: ${item.error}` : 'Ready for publish'}
+                    </div>
+                    <div class="actions">
+                        <button class="secondary small" onclick="publishNow('${item.id}')">Publish Now</button>
+                    </div>
+                </article>
+            `).join('');
+        }
+
+        async function refreshOverview() {
+            const overview = await fetchOverview();
+            renderAccounts(overview.accounts || []);
+            renderSchedules(overview.schedules || []);
+            renderQueue(overview.queue || []);
+        }
+
+        scheduleForm.addEventListener('submit', async (event) => {
+            event.preventDefault();
+            const data = Object.fromEntries(new FormData(scheduleForm).entries());
+
+            if (data.startDate && data.endDate && new Date(data.endDate) < new Date(data.startDate)) {
+                alert('End date must be on or after the start date.');
+                return;
+            }
+
+            const response = await fetch(apiEndpoints.publishingSchedules, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+            const result = await response.json();
+            if (!result.success) {
+                alert(result.error || 'Failed to create schedule');
+                return;
+            }
+            await refreshOverview();
+        });
+
+        async function publishNow(queueItemId) {
+            const response = await fetch(apiEndpoints.publishQueueItem(queueItemId), {
+                method: 'POST'
+            });
+            const result = await response.json();
+            if (!result.success && result.item?.status !== 'published') {
+                alert(result.error || result.item?.error || 'Failed to publish item');
+            }
+            await refreshOverview();
+        }
+
+        window.publishNow = publishNow;
+        schedulePlatformSelect.addEventListener('change', updateAccountOptions);
+        handleOAuthResult();
+        loadCountryOptions();
+        loadProviderStatus();
+        refreshOverview();
+    </script>
+</body>
+</html>

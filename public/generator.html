@@ -1,0 +1,1266 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Generate Posts - PostCraft AI</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html {
+            overflow-y: auto;
+            scrollbar-width: none;
+            scroll-behavior: smooth;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        ::-webkit-scrollbar {
+            display: none;
+        }
+
+        html {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+
+        * {
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 25%, #334155 50%, #475569 75%, #64748b 100%);
+            background-attachment: fixed;
+            color: #ffffff;
+            min-height: 100vh;
+            overflow-x: hidden;
+            position: relative;
+            margin: 0;
+            padding: 0;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: 
+                radial-gradient(circle at 20% 80%, rgba(120, 119, 198, 0.3) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(255, 119, 48, 0.3) 0%, transparent 50%),
+                radial-gradient(circle at 40% 40%, rgba(120, 119, 198, 0.2) 0%, transparent 50%);
+            z-index: -1;
+            animation: backgroundFloat 20s ease-in-out infinite;
+        }
+
+        @keyframes backgroundFloat {
+            0%, 100% { transform: rotate(0deg) scale(1); }
+            50% { transform: rotate(180deg) scale(1.1); }
+        }
+
+        /* Header */
+        .header {
+            position: relative;
+            z-index: 10;
+            padding: 1.5rem 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 2rem;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            text-decoration: none;
+            color: inherit;
+        }
+
+        .logo-text {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #ffffff;
+            text-shadow: 0 3px 6px rgba(0, 0, 0, 0.4);
+        }
+
+        .back-btn {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 0.75rem 1.5rem;
+            border-radius: 12px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .back-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+            border-color: rgba(255, 255, 255, 0.4);
+            transform: translateY(-2px);
+        }
+
+        /* Main Container */
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+            position: relative;
+            z-index: 10;
+        }
+
+        .page-title {
+            text-align: center;
+            font-size: 3rem;
+            font-weight: 300;
+            margin-bottom: 1rem;
+            color: #ffffff;
+            text-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+        }
+
+        .page-subtitle {
+            text-align: center;
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 1.1rem;
+            margin-bottom: 3rem;
+        }
+
+        /* Form Section */
+        .form-section {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(20px);
+            border-radius: 20px;
+            padding: 2rem;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+            margin-bottom: 2rem;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .form-group.full-width {
+            grid-column: 1 / -1;
+        }
+
+        .form-label {
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            color: #ffffff;
+            font-size: 0.9rem;
+        }
+
+        .form-input {
+            padding: 0.75rem;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: border-color 0.2s;
+            font-family: inherit;
+            background: rgba(255, 255, 255, 0.1);
+            color: #ffffff;
+            backdrop-filter: blur(10px);
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: #06b6d4;
+            box-shadow: 0 0 0 3px rgba(6, 182, 212, 0.1);
+        }
+
+        .form-input::placeholder {
+            color: rgba(255, 255, 255, 0.5);
+        }
+
+        .form-textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+
+        .submit-btn {
+            width: 100%;
+            background: linear-gradient(135deg, #06b6d4, #0891b2);
+            color: white;
+            border: none;
+            padding: 1rem 2rem;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 4px 20px rgba(6, 182, 212, 0.3);
+        }
+
+        .submit-btn:hover {
+            background: linear-gradient(135deg, #0891b2, #0e7490);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 30px rgba(6, 182, 212, 0.4);
+        }
+
+        .submit-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* Results Section */
+        .results-section {
+            display: none;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(20px);
+            border-radius: 20px;
+            padding: 2rem;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+        }
+
+        .results-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .results-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #ffffff;
+        }
+
+        .results-actions {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .view-toggle {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .export-actions {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .action-btn.active {
+            background: rgba(6, 182, 212, 0.2);
+            border-color: #06b6d4;
+            color: #06b6d4;
+        }
+
+        .action-btn {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .action-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateY(-1px);
+        }
+
+        .posts-grid {
+            display: grid;
+            gap: 1.5rem;
+        }
+
+        .post-card {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border-radius: 16px;
+            padding: 1.5rem;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.3s;
+        }
+
+        .post-card:hover {
+            background: rgba(255, 255, 255, 0.08);
+            transform: translateY(-2px);
+        }
+
+        .post-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .post-date {
+            font-size: 0.9rem;
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        .post-type {
+            background: rgba(6, 182, 212, 0.2);
+            color: #06b6d4;
+            padding: 0.25rem 0.75rem;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+
+        .post-content {
+            color: rgba(255, 255, 255, 0.9);
+            line-height: 1.6;
+            margin-bottom: 1rem;
+        }
+
+        .post-analytics {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1rem;
+            padding: 0.75rem;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .analytics-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.25rem;
+        }
+
+        .analytics-label {
+            font-size: 0.75rem;
+            color: rgba(255, 255, 255, 0.6);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .analytics-value {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: #06b6d4;
+        }
+
+        .post-actions {
+            display: flex;
+            gap: 0.5rem;
+            justify-content: flex-end;
+            align-items: center;
+        }
+
+        .post-action-btn {
+            background: none;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: rgba(255, 255, 255, 0.7);
+            padding: 0.25rem 0.5rem;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .post-action-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: #ffffff;
+        }
+
+        /* Enhanced AI Bot Button */
+        .ai-bot-btn {
+            position: relative;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+            overflow: hidden;
+        }
+
+        .ai-bot-btn::before {
+            content: '';
+            position: absolute;
+            top: -2px;
+            left: -2px;
+            right: -2px;
+            bottom: -2px;
+            background: linear-gradient(45deg, #667eea, #764ba2, #667eea);
+            border-radius: 50%;
+            z-index: -1;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .ai-bot-btn:hover {
+            transform: scale(1.15);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+        }
+
+        .ai-bot-btn:hover::before {
+            opacity: 0.6;
+            animation: aiGlow 1s linear infinite;
+        }
+
+        @keyframes aiGlow {
+            0%, 100% { transform: rotate(0deg); }
+            50% { transform: rotate(180deg); }
+        }
+
+        /* AI Bot Popup */
+        .ai-bot-popup {
+            display: none;
+            position: fixed;
+            top: 96px;
+            right: 24px;
+            width: 360px;
+            max-height: calc(100vh - 120px);
+            background: #ffffff;
+            border-radius: 16px;
+            border: 1px solid rgba(148, 163, 184, 0.35);
+            box-shadow: 0 24px 60px rgba(15, 23, 42, 0.35);
+            z-index: 5000;
+            overflow: hidden;
+            isolation: isolate;
+            filter: none !important;
+            backdrop-filter: none !important;
+            opacity: 1 !important;
+        }
+
+        .ai-popup-header {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            padding: 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .ai-popup-title {
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        .ai-close-btn {
+            background: none;
+            border: none;
+            color: white;
+            cursor: pointer;
+            font-size: 1.2rem;
+            padding: 0;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .ai-close-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .ai-chat-area {
+            background: #ffffff;
+            max-height: calc(100vh - 260px);
+            overflow-y: auto;
+            padding: 1rem;
+            position: relative;
+            z-index: 1;
+            filter: none !important;
+            backdrop-filter: none !important;
+            opacity: 1 !important;
+        }
+
+        .ai-chat-message {
+            margin-bottom: 0.75rem;
+            padding: 0.5rem;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            line-height: 1.4;
+            position: relative;
+            z-index: 2;
+            filter: none !important;
+            backdrop-filter: none !important;
+            opacity: 1 !important;
+        }
+
+        .ai-chat-message.bot {
+            background: rgba(102, 126, 234, 0.1);
+            color: #374151;
+        }
+
+        .ai-chat-message.user {
+            background: rgba(6, 182, 212, 0.1);
+            color: #374151;
+            margin-left: 2rem;
+        }
+
+        .ai-input-area {
+            background: #ffffff;
+            padding: 1rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.2);
+            position: relative;
+            z-index: 1;
+            filter: none !important;
+            backdrop-filter: none !important;
+            opacity: 1 !important;
+        }
+
+        .ai-input-group {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .ai-input {
+            flex: 1;
+            padding: 0.5rem;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 6px;
+            font-size: 0.85rem;
+            background: #f8fafc;
+            color: #111827;
+            filter: none !important;
+            backdrop-filter: none !important;
+            opacity: 1 !important;
+        }
+
+        .ai-send-btn {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            transition: all 0.2s;
+        }
+
+        .ai-send-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+        }
+
+        .ai-apply-btn {
+            background: #10b981;
+            color: white;
+            border: none;
+            padding: 0.25rem 0.75rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            cursor: pointer;
+            margin-top: 0.5rem;
+            transition: all 0.2s;
+        }
+
+        .ai-apply-btn:hover {
+            background: #059669;
+            transform: translateY(-1px);
+        }
+
+        /* Loading */
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 3rem;
+        }
+
+        .loading-spinner {
+            width: 60px;
+            height: 60px;
+            border: 4px solid rgba(255, 255, 255, 0.1);
+            border-top: 4px solid #06b6d4;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 2rem;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .loading-text {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #ffffff;
+            margin-bottom: 1rem;
+        }
+
+        .loading-subtext {
+            font-size: 0.9rem;
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+
+            .page-title {
+                font-size: 2rem;
+            }
+
+            .form-grid {
+                grid-template-columns: 1fr;
+                gap: 1rem;
+            }
+
+            .results-header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .results-actions {
+                width: 100%;
+                justify-content: flex-start;
+            }
+
+            .ai-bot-popup {
+                top: auto;
+                right: 12px;
+                bottom: 12px;
+                left: 12px;
+                width: auto;
+                max-height: 70vh;
+            }
+
+            .ai-chat-area {
+                max-height: calc(70vh - 150px);
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Header -->
+    <header class="header">
+        <nav class="nav">
+            <a href="index.html?skipIntro=1" class="logo">
+                <div class="logo-text">craft.ai</div>
+            </a>
+            <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
+                <a href="publisher.html" class="back-btn">
+                    <span>📅</span> Publishing Hub
+                </a>
+                <a href="index.html?skipIntro=1" class="back-btn">
+                    <span>←</span> Back to Home
+                </a>
+            </div>
+        </nav>
+    </header>
+
+    <!-- Main Container -->
+    <div class="container">
+        <h1 class="page-title" id="pageTitle">Generate LinkedIn Posts</h1>
+        <p class="page-subtitle" id="pageSubtitle">Fill in your details and let AI create amazing content for you</p>
+
+        <!-- Form Section -->
+        <div class="form-section">
+            <form id="postForm">
+                <input type="hidden" id="platform" name="platform" value="linkedin">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label class="form-label">Start Date</label>
+                        <input type="date" id="startDate" name="startDate" class="form-input" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">End Date</label>
+                        <input type="date" id="endDate" name="endDate" class="form-input" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Country</label>
+                        <select id="countryCode" name="countryCode" class="form-input">
+                            <option value="US">United States</option>
+                            <option value="GB">United Kingdom</option>
+                            <option value="CA">Canada</option>
+                            <option value="AU">Australia</option>
+                            <option value="DE">Germany</option>
+                            <option value="FR">France</option>
+                            <option value="IN">India</option>
+                            <option value="JP">Japan</option>
+                            <option value="BR">Brazil</option>
+                            <option value="MX">Mexico</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Industry</label>
+                        <input type="text" id="industry" name="industry" class="form-input" 
+                               placeholder="e.g., Technology, Healthcare, Finance" required>
+                    </div>
+
+                    <div class="form-group full-width">
+                        <label class="form-label">Company Name</label>
+                        <input type="text" id="companyName" name="companyName" class="form-input" 
+                               placeholder="Your company name" required>
+                    </div>
+
+                    <div class="form-group full-width">
+                        <label class="form-label">Website (Optional)</label>
+                        <input type="url" id="website" name="website" class="form-input" 
+                               placeholder="https://yourcompany.com">
+                    </div>
+
+                    <div class="form-group full-width">
+                        <label class="form-label">Services/Products</label>
+                        <textarea id="services" name="services" class="form-input form-textarea" 
+                                  placeholder="Describe your main services or products..." required></textarea>
+                    </div>
+                </div>
+
+                <button type="submit" class="submit-btn" id="submitButton">
+                    Generate LinkedIn Posts
+                </button>
+            </form>
+        </div>
+
+        <!-- Loading Section -->
+        <div class="loading" id="loading">
+            <div class="loading-spinner"></div>
+            <div class="loading-text" id="loadingText">Generating Your Posts...</div>
+            <div class="loading-subtext">This may take a few moments</div>
+        </div>
+
+        <!-- Results Section -->
+        <div class="results-section" id="results">
+            <div class="results-header">
+                <h2 class="results-title" id="resultsTitle">Your LinkedIn Posts</h2>
+                <div class="results-actions">
+                    <div class="view-toggle">
+                        <button class="action-btn active" id="listViewBtn" onclick="switchView('list')">📋 List</button>
+                        <button class="action-btn" id="calendarViewBtn" onclick="switchView('calendar')">📅 Calendar</button>
+                    </div>
+                    <div class="export-actions">
+                        <button class="action-btn" onclick="exportToPDF()">📄 Export PDF</button>
+                        <button class="action-btn" onclick="exportToCSV()">📊 Export CSV</button>
+                        <button class="action-btn" onclick="generateNew()">🔄 Generate New</button>
+                    </div>
+                </div>
+            </div>
+            <div class="posts-grid" id="postsContainer">
+                <!-- Posts will be populated here -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentCalendar = [];
+        let currentPlatform = 'linkedin';
+        const platformMeta = {
+            linkedin: {
+                label: 'LinkedIn',
+                plural: 'LinkedIn Posts',
+                companyLabel: 'Company Name',
+                websiteLabel: 'Website (Optional)',
+                servicesLabel: 'Services/Products',
+                servicesPlaceholder: 'Describe your main services or products...',
+                subtitle: 'Fill in your details and let AI create amazing content for you'
+            }
+        };
+
+        function getPlatformFromUrl() {
+            const params = new URLSearchParams(window.location.search);
+            const platform = (params.get('platform') || 'linkedin').toLowerCase();
+            return platform === 'linkedin' ? platform : 'linkedin';
+        }
+
+        function applyPlatformUI() {
+            currentPlatform = getPlatformFromUrl();
+            const meta = platformMeta[currentPlatform];
+
+            document.title = `Generate ${meta.plural} - PostCraft AI`;
+            document.getElementById('platform').value = currentPlatform;
+            document.getElementById('pageTitle').textContent = `Generate ${meta.plural}`;
+            document.getElementById('pageSubtitle').textContent = meta.subtitle;
+            document.getElementById('submitButton').textContent = `Generate ${meta.plural}`;
+            document.getElementById('resultsTitle').textContent = `Your ${meta.plural}`;
+            document.getElementById('loadingText').textContent = `Generating Your ${meta.plural}...`;
+            document.getElementById('companyName').previousElementSibling.textContent = meta.companyLabel;
+            document.getElementById('website').previousElementSibling.textContent = meta.websiteLabel;
+            document.getElementById('services').previousElementSibling.textContent = meta.servicesLabel;
+            document.getElementById('services').placeholder = meta.servicesPlaceholder;
+        }
+
+        // Set default dates
+        document.addEventListener('DOMContentLoaded', function() {
+            applyPlatformUI();
+            const today = new Date();
+            const nextMonth = new Date(today.getFullYear(), today.getMonth() + 1, today.getDate());
+            
+            document.getElementById('startDate').value = today.toISOString().split('T')[0];
+            document.getElementById('endDate').value = nextMonth.toISOString().split('T')[0];
+        });
+
+        // Form submission
+        document.getElementById('postForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(e.target);
+            const data = Object.fromEntries(formData.entries());
+            
+            // Show loading
+            document.querySelector('.form-section').style.display = 'none';
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('results').style.display = 'none';
+            
+            try {
+                const response = await fetch('/.netlify/functions/generate', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(data)
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    currentCalendar = result.calendar;
+                    displayResults(result.calendar);
+                } else {
+                    throw new Error(result.error || 'Failed to generate posts');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Failed to generate posts. Please try again.');
+                document.querySelector('.form-section').style.display = 'block';
+            } finally {
+                document.getElementById('loading').style.display = 'none';
+            }
+        });
+
+        function displayResults(calendar) {
+            const container = document.getElementById('postsContainer');
+            container.innerHTML = '';
+            
+            calendar.forEach((post, index) => {
+                const postCard = document.createElement('div');
+                postCard.className = 'post-card';
+                postCard.innerHTML = `
+                    <div class="post-header">
+                        <div class="post-date">${new Date(post.date).toLocaleDateString()}</div>
+                        <div class="post-type">${post.type === 'festival' ? `🎉 ${post.holiday}` : `💼 ${post.postType}`}</div>
+                    </div>
+                    <div class="post-content">${post.post}</div>
+                    <div class="post-analytics">
+                        <div class="analytics-item">
+                            <span class="analytics-label">Length:</span>
+                            <span class="analytics-value">${post.post.length} chars</span>
+                        </div>
+                        <div class="analytics-item">
+                            <span class="analytics-label">Hashtags:</span>
+                            <span class="analytics-value">${(post.post.match(/#\w+/g) || []).length}</span>
+                        </div>
+                        <div class="analytics-item">
+                            <span class="analytics-label">Engagement Score:</span>
+                            <span class="analytics-value">${calculateEngagementScore(post)}%</span>
+                        </div>
+                    </div>
+                    <div class="post-actions">
+                        <button class="post-action-btn" onclick="copyPost(${index})">Copy</button>
+                        <button class="post-action-btn" onclick="editPost(${index})">Edit</button>
+                        <div style="position: relative;">
+                            <button class="ai-bot-btn" onclick="toggleAIBotPopup(${index})" title="AI Assistant">
+                                🤖
+                            </button>
+                            <div class="ai-bot-popup" id="aiPopup${index}">
+                                <div class="ai-popup-header">
+                                    <div class="ai-popup-title">🤖 AI Assistant</div>
+                                    <button class="ai-close-btn" onclick="closeAIBotPopup(${index})">&times;</button>
+                                </div>
+                                <div class="ai-chat-area" id="aiChatArea${index}">
+                                    <div class="ai-chat-message bot">
+                                        👋 Hi! I can help improve this post. What would you like to change?
+                                    </div>
+                                </div>
+                                <div class="ai-input-area">
+                                    <div class="ai-input-group">
+                                        <input type="text" class="ai-input" id="aiInput${index}" placeholder="Ask me to improve this post..." onkeypress="if(event.key==='Enter') sendAIMessage(${index})">
+                                        <button class="ai-send-btn" onclick="sendAIMessage(${index})">Send</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                container.appendChild(postCard);
+            });
+            
+            document.getElementById('results').style.display = 'block';
+        }
+
+        function copyPost(index) {
+            const post = currentCalendar[index];
+            navigator.clipboard.writeText(post.post).then(() => {
+                // Show feedback
+                const btn = event.target;
+                const originalText = btn.textContent;
+                btn.textContent = 'Copied!';
+                btn.style.background = 'rgba(34, 197, 94, 0.2)';
+                btn.style.color = '#22c55e';
+                
+                setTimeout(() => {
+                    btn.textContent = originalText;
+                    btn.style.background = '';
+                    btn.style.color = '';
+                }, 2000);
+            });
+        }
+
+        function editPost(index) {
+            const post = currentCalendar[index];
+            const newContent = prompt('Edit your post:', post.post);
+            if (newContent && newContent !== post.post) {
+                currentCalendar[index].post = newContent;
+                displayResults(currentCalendar);
+            }
+        }
+
+        function exportToPDF() {
+            const content = currentCalendar.map(post => {
+                const date = new Date(post.date).toLocaleDateString();
+                const type = post.type === 'festival' ? `Festival: ${post.holiday}` : `Business: ${post.postType}`;
+                return `Date: ${date}\nType: ${type}\n\n${post.post}\n\n${'='.repeat(50)}\n\n`;
+            }).join('');
+            
+            const blob = new Blob([content], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${currentPlatform}-posts-${new Date().toISOString().split('T')[0]}.txt`;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        function exportToCSV() {
+            const headers = ['Date', 'Type', 'Holiday/Category', 'Content', 'Character Count'];
+            const rows = currentCalendar.map(post => {
+                return [
+                    post.date,
+                    post.type,
+                    post.holiday || post.postType || '',
+                    `"${post.post.replace(/"/g, '""')}"`,
+                    post.post.length
+                ];
+            });
+            
+            const csvContent = [headers, ...rows].map(row => row.join(',')).join('\n');
+            const blob = new Blob([csvContent], { type: 'text/csv' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${currentPlatform}-posts-${new Date().toISOString().split('T')[0]}.csv`;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        function calculateEngagementScore(post) {
+            let score = 75; // Base score
+            
+            // Festival posts typically get higher engagement
+            if (post.type === 'festival') score += 15;
+            
+            // Posts with optimal length (100-300 chars) score higher
+            const length = post.post.length;
+            if (length >= 100 && length <= 300) score += 10;
+            else if (length > 500) score -= 10;
+            
+            // Posts with hashtags score higher
+            const hashtagCount = (post.post.match(/#\w+/g) || []).length;
+            score += Math.min(hashtagCount * 3, 15);
+            
+            // Posts with emojis score higher
+            const emojiCount = (post.post.match(/[\u{1F600}-\u{1F64F}]|[\u{1F300}-\u{1F5FF}]|[\u{1F680}-\u{1F6FF}]|[\u{1F1E0}-\u{1F1FF}]/gu) || []).length;
+            score += Math.min(emojiCount * 2, 10);
+            
+            // Posts with questions score higher
+            if (post.post.includes('?')) score += 5;
+            
+            // Posts with call-to-action words score higher
+            const ctaWords = ['comment', 'share', 'like', 'follow', 'subscribe', 'join', 'learn', 'discover'];
+            const hasCTA = ctaWords.some(word => post.post.toLowerCase().includes(word));
+            if (hasCTA) score += 8;
+            
+            return Math.min(score, 100);
+        }
+
+        function switchView(viewType) {
+            const listBtn = document.getElementById('listViewBtn');
+            const calendarBtn = document.getElementById('calendarViewBtn');
+            
+            if (viewType === 'list') {
+                listBtn.classList.add('active');
+                calendarBtn.classList.remove('active');
+                displayResults(currentCalendar);
+            } else {
+                calendarBtn.classList.add('active');
+                listBtn.classList.remove('active');
+                displayCalendarView(currentCalendar);
+            }
+        }
+
+        function displayCalendarView(calendar) {
+            const container = document.getElementById('postsContainer');
+            container.innerHTML = '';
+            container.style.display = 'grid';
+            container.style.gridTemplateColumns = 'repeat(7, 1fr)';
+            container.style.gap = '1rem';
+            
+            // Group posts by date
+            const postsByDate = {};
+            calendar.forEach(post => {
+                const date = new Date(post.date).toDateString();
+                if (!postsByDate[date]) postsByDate[date] = [];
+                postsByDate[date].push(post);
+            });
+            
+            // Create calendar grid
+            const startDate = new Date(calendar[0].date);
+            const endDate = new Date(calendar[calendar.length - 1].date);
+            
+            // Add day headers
+            const dayHeaders = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+            dayHeaders.forEach(day => {
+                const dayHeader = document.createElement('div');
+                dayHeader.style.cssText = 'text-align: center; font-weight: 600; color: rgba(255,255,255,0.8); padding: 0.5rem;';
+                dayHeader.textContent = day;
+                container.appendChild(dayHeader);
+            });
+            
+            // Fill calendar days
+            const currentDate = new Date(startDate);
+            currentDate.setDate(currentDate.getDate() - currentDate.getDay()); // Start from Sunday
+            
+            while (currentDate <= endDate) {
+                const dayCard = document.createElement('div');
+                const dateStr = currentDate.toDateString();
+                const postsForDay = postsByDate[dateStr] || [];
+                
+                dayCard.style.cssText = `
+                    background: rgba(255, 255, 255, 0.05);
+                    border-radius: 8px;
+                    padding: 0.5rem;
+                    min-height: 100px;
+                    border: 1px solid rgba(255, 255, 255, 0.1);
+                    ${postsForDay.length > 0 ? 'border-color: #06b6d4; background: rgba(6, 182, 212, 0.1);' : ''}
+                `;
+                
+                dayCard.innerHTML = `
+                    <div style="font-size: 0.8rem; color: rgba(255,255,255,0.7); margin-bottom: 0.25rem;">
+                        ${currentDate.getDate()}
+                    </div>
+                    ${postsForDay.map(post => `
+                        <div style="font-size: 0.7rem; background: rgba(6,182,212,0.2); color: #06b6d4; padding: 0.25rem; border-radius: 4px; margin-bottom: 0.25rem; cursor: pointer;" onclick="showPostPreview('${post.date}')">
+                            ${post.type === 'festival' ? '🎉' : '💼'} ${post.type === 'festival' ? post.holiday : post.postType}
+                        </div>
+                    `).join('')}
+                `;
+                
+                container.appendChild(dayCard);
+                currentDate.setDate(currentDate.getDate() + 1);
+            }
+        }
+
+        function showPostPreview(date) {
+            const post = currentCalendar.find(p => p.date === date);
+            if (post) {
+                alert(`${post.type === 'festival' ? '🎉 ' + post.holiday : '💼 ' + post.postType}\n\n${post.post}`);
+            }
+        }
+
+        function generateNew() {
+            document.querySelector('.form-section').style.display = 'block';
+            document.getElementById('results').style.display = 'none';
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // AI Bot Functions
+        function toggleAIBotPopup(postIndex) {
+            const popup = document.getElementById(`aiPopup${postIndex}`);
+            const isVisible = popup.style.display === 'block';
+            
+            // Close all other popups
+            document.querySelectorAll('.ai-bot-popup').forEach(p => {
+                p.style.display = 'none';
+            });
+            
+            // Toggle current popup
+            popup.style.display = isVisible ? 'none' : 'block';
+        }
+
+        function closeAIBotPopup(postIndex) {
+            document.getElementById(`aiPopup${postIndex}`).style.display = 'none';
+        }
+
+        async function sendAIMessage(postIndex) {
+            const input = document.getElementById(`aiInput${postIndex}`);
+            const chatArea = document.getElementById(`aiChatArea${postIndex}`);
+            const userMessage = input.value.trim();
+            
+            if (!userMessage) return;
+            
+            // Add user message to chat
+            const userDiv = document.createElement('div');
+            userDiv.className = 'ai-chat-message user';
+            userDiv.textContent = userMessage;
+            chatArea.appendChild(userDiv);
+            
+            // Clear input
+            input.value = '';
+            
+            // Add loading message
+            const loadingDiv = document.createElement('div');
+            loadingDiv.className = 'ai-chat-message bot';
+            loadingDiv.innerHTML = '🤔 Thinking...';
+            chatArea.appendChild(loadingDiv);
+            
+            // Scroll to bottom
+            chatArea.scrollTop = chatArea.scrollHeight;
+            
+            try {
+                const post = currentCalendar[postIndex];
+                const response = await fetch('/.netlify/functions/improve-post', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        currentPost: post.post,
+                        userRequest: userMessage,
+                        platform: currentPlatform,
+                        postType: post.type,
+                        holiday: post.holiday,
+                        postTypeCategory: post.postType,
+                        companyInfo: {
+                            name: document.getElementById('companyName').value || 'Your Company',
+                            industry: document.getElementById('industry').value || 'Business'
+                        }
+                    })
+                });
+                
+                const result = await response.json();
+                
+                // Remove loading message
+                chatArea.removeChild(loadingDiv);
+                
+                if (result.success) {
+                    // Add bot response
+                    const botDiv = document.createElement('div');
+                    botDiv.className = 'ai-chat-message bot';
+                    
+                    const explanationDiv = document.createElement('div');
+                    explanationDiv.textContent = result.explanation;
+                    botDiv.appendChild(explanationDiv);
+                    
+                    // Add apply button if there's an improved post
+                    if (result.improvedPost) {
+                        const applyBtn = document.createElement('button');
+                        applyBtn.className = 'ai-apply-btn';
+                        applyBtn.textContent = 'Apply Changes';
+                        applyBtn.onclick = function() {
+                            applyAIChangesToPost(postIndex, result.improvedPost);
+                        };
+                        botDiv.appendChild(applyBtn);
+                    }
+                    
+                    chatArea.appendChild(botDiv);
+                } else {
+                    // Add error message
+                    const errorDiv = document.createElement('div');
+                    errorDiv.className = 'ai-chat-message bot';
+                    errorDiv.textContent = '❌ Sorry, I encountered an error. Please try again.';
+                    chatArea.appendChild(errorDiv);
+                }
+            } catch (error) {
+                // Remove loading message
+                chatArea.removeChild(loadingDiv);
+                
+                // Add error message
+                const errorDiv = document.createElement('div');
+                errorDiv.className = 'ai-chat-message bot';
+                errorDiv.textContent = '❌ Sorry, I encountered an error. Please try again.';
+                chatArea.appendChild(errorDiv);
+            }
+            
+            // Scroll to bottom
+            chatArea.scrollTop = chatArea.scrollHeight;
+        }
+
+        function applyAIChangesToPost(postIndex, improvedPost) {
+            // Update the post content in the calendar
+            currentCalendar[postIndex].post = improvedPost;
+            
+            // Refresh the results display
+            displayResults(currentCalendar);
+            
+            // Close the AI popup
+            closeAIBotPopup(postIndex);
+            
+            // Show success message briefly
+            const successMsg = document.createElement('div');
+            successMsg.style.cssText = 'position: fixed; top: 20px; right: 20px; background: #10b981; color: white; padding: 1rem; border-radius: 8px; z-index: 2000; box-shadow: 0 4px 12px rgba(0,0,0,0.3);';
+            successMsg.textContent = '✅ Post updated successfully!';
+            document.body.appendChild(successMsg);
+            
+            setTimeout(() => {
+                document.body.removeChild(successMsg);
+            }, 3000);
+        }
+
+        // Close AI popups when clicking outside
+        document.addEventListener('click', function(event) {
+            if (!event.target.closest('.ai-bot-btn') && !event.target.closest('.ai-bot-popup')) {
+                document.querySelectorAll('.ai-bot-popup').forEach(popup => {
+                    popup.style.display = 'none';
+                });
+            }
+        });
+    </script>
+</body>
+
+</html>
