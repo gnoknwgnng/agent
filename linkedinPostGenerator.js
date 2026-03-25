@@ -58,9 +58,35 @@ class LinkedInPostGenerator {
         return configs[this.platform] || configs.linkedin;
     }
 
-    async setCompanyInfo(companyName, website, services, industry) {
-        // Auto-generate hashtags
-        const hashtags = await this.generateHashtags(companyName, services, industry);
+    buildFallbackHashtags(companyName, services, industry) {
+        const normalizedServices = Array.isArray(services)
+            ? services
+            : String(services || '').split(',').map((item) => item.trim()).filter(Boolean);
+
+        const candidates = [
+            companyName,
+            industry,
+            ...normalizedServices,
+            'Business',
+            'Innovation',
+            'Growth',
+            'LinkedIn'
+        ];
+
+        const hashtags = candidates
+            .map((value) => String(value || '').replace(/[^a-zA-Z0-9 ]/g, ' ').trim())
+            .filter(Boolean)
+            .map((value) => value.split(/\s+/).map((part) => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase()).join(''))
+            .filter(Boolean);
+
+        return [...new Set(hashtags)].slice(0, 8);
+    }
+
+    async setCompanyInfo(companyName, website, services, industry, options = {}) {
+        const skipAiHashtags = Boolean(options.skipAiHashtags);
+        const hashtags = skipAiHashtags
+            ? this.buildFallbackHashtags(companyName, services, industry)
+            : await this.generateHashtags(companyName, services, industry);
 
         this.companyInfo = {
             name: companyName,

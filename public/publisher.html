@@ -357,10 +357,24 @@
             oauthBanner.style.color = '#bbf7d0';
         }
 
+        async function readJsonResponse(response) {
+            const raw = await response.text();
+
+            try {
+                return JSON.parse(raw);
+            } catch (error) {
+                if (!response.ok) {
+                    throw new Error(`Request failed with status ${response.status}.`);
+                }
+
+                throw new Error('The server returned an invalid response.');
+            }
+        }
+
         async function loadCountryOptions() {
             try {
                 const response = await fetch(apiEndpoints.countries);
-                const countries = await response.json();
+                const countries = await readJsonResponse(response);
                 if (!Array.isArray(countries) || !countries.length) {
                     return;
                 }
@@ -398,7 +412,7 @@
         async function loadProviderStatus() {
             try {
                 const response = await fetch(apiEndpoints.publishingProviders);
-                const result = await response.json();
+                const result = await readJsonResponse(response);
                 const linkedIn = result.providers?.linkedin;
 
                 if (linkedIn?.oauthConfigured) {
@@ -440,7 +454,7 @@
 
         async function fetchOverview() {
             const response = await fetch(apiEndpoints.publishingOverview);
-            return response.json();
+            return readJsonResponse(response);
         }
 
         function renderAccounts(accounts) {
@@ -515,7 +529,7 @@
                     <span class="pill ${item.status === 'failed' ? 'failed' : item.status === 'scheduled' ? 'scheduled' : ''}">${item.status}</span>
                     <h3>${item.platform} · ${new Date(item.scheduledFor).toLocaleString()}</h3>
                     <div class="meta">
-                        ${item.content.slice(0, 140).replace(/</g, '&lt;')}${item.content.length > 140 ? '...' : ''}<br>
+                        ${String(item.content || 'Content will be generated automatically when this item is published.').slice(0, 140).replace(/</g, '&lt;')}${String(item.content || '').length > 140 ? '...' : ''}<br>
                         ${item.error ? `Error: ${item.error}` : 'Ready for publish'}
                     </div>
                     <div class="actions">
@@ -541,28 +555,36 @@
                 return;
             }
 
-            const response = await fetch(apiEndpoints.publishingSchedules, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(data)
-            });
-            const result = await response.json();
-            if (!result.success) {
-                alert(result.error || 'Failed to create schedule');
-                return;
+            try {
+                const response = await fetch(apiEndpoints.publishingSchedules, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                const result = await readJsonResponse(response);
+                if (!result.success) {
+                    alert(result.details || result.error || 'Failed to create schedule');
+                    return;
+                }
+                await refreshOverview();
+            } catch (error) {
+                alert(error.message || 'Failed to create schedule');
             }
-            await refreshOverview();
         });
 
         async function publishNow(queueItemId) {
-            const response = await fetch(apiEndpoints.publishQueueItem(queueItemId), {
-                method: 'POST'
-            });
-            const result = await response.json();
-            if (!result.success && result.item?.status !== 'published') {
-                alert(result.error || result.item?.error || 'Failed to publish item');
+            try {
+                const response = await fetch(apiEndpoints.publishQueueItem(queueItemId), {
+                    method: 'POST'
+                });
+                const result = await readJsonResponse(response);
+                if (!result.success && result.item?.status !== 'published') {
+                    alert(result.details || result.error || result.item?.error || 'Failed to publish item');
+                }
+                await refreshOverview();
+            } catch (error) {
+                alert(error.message || 'Failed to publish item');
             }
-            await refreshOverview();
         }
 
         window.publishNow = publishNow;

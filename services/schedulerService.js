@@ -9,6 +9,8 @@ const {
 const { publishToPlatform } = require('./platformPublishers');
 const LinkedInPostGenerator = require('../linkedinPostGenerator');
 
+const PENDING_CONTENT_PLACEHOLDER = 'Content will be generated automatically when this scheduled item is published.';
+
 function startOfDay(date) {
     const d = new Date(date);
     d.setHours(0, 0, 0, 0);
@@ -81,32 +83,15 @@ function buildScheduleSlots(postsPerWeek, startDate, endDate, preferredHour) {
 }
 
 async function generateQueueItemsForSchedule(schedule) {
-    const generator = new LinkedInPostGenerator();
-    generator.setPlatform(schedule.platform);
-    await generator.setCompanyInfo(
-        schedule.companyName,
-        schedule.website,
-        schedule.services,
-        schedule.industry
-    );
-
-    const calendar = await generator.generateCalendar(
-        formatDate(schedule.startDate),
-        formatDate(schedule.endDate),
-        schedule.countryCode || 'US'
-    );
-
-    const calendarByDate = new Map(calendar.map((item) => [item.date, item]));
     const slots = buildScheduleSlots(
         schedule.postsPerWeek,
         schedule.startDate,
         schedule.endDate,
         schedule.preferredHour || 10
     );
+    const postTypes = ['service', 'tip', 'motivation', 'ai_tool'];
 
     return slots.map((scheduledFor, index) => {
-        const scheduledDate = formatDate(scheduledFor);
-        const contentSource = calendarByDate.get(scheduledDate) || calendar[index % calendar.length];
         return {
             id: createId('queue'),
             scheduleId: schedule.id,
@@ -115,16 +100,53 @@ async function generateQueueItemsForSchedule(schedule) {
             status: 'scheduled',
             scheduledFor: scheduledFor.toISOString(),
             createdAt: new Date().toISOString(),
-            content: contentSource.post,
+            content: PENDING_CONTENT_PLACEHOLDER,
             mediaUrl: schedule.defaultImageUrl || '',
             recipientPhone: schedule.defaultRecipientPhone || '',
             metadata: {
-                type: contentSource.type,
-                holiday: contentSource.holiday || null,
-                postType: contentSource.postType || null
+                type: 'pending',
+                holiday: null,
+                postType: postTypes[index % postTypes.length],
+                contentStatus: 'pending_generation'
             }
         };
     });
+}
+
+async function generateContentForQueueItem(queueItem, schedule) {
+    const generator = new LinkedInPostGenerator();
+    generator.setPlatform(schedule.platform);
+    await generator.setCompanyInfo(
+        schedule.companyName,
+        schedule.website,
+        schedule.services,
+        schedule.industry,
+        { skipAiHashtags: true }
+    );
+
+    const scheduledDate = formatDate(queueItem.scheduledFor);
+    const calendar = await generator.generateCalendar(
+        scheduledDate,
+        scheduledDate,
+        schedule.countryCode || 'US'
+    );
+
+    if (!calendar.length) {
+        throw new Error('No content could be generated for the scheduled publish date.');
+    }
+
+    const generatedItem = calendar[0];
+    queueItem.content = generatedItem.post;
+    queueItem.metadata = {
+        ...queueItem.metadata,
+        type: generatedItem.type,
+        holiday: generatedItem.holiday || null,
+        postType: generatedItem.postType || queueItem.metadata?.postType || null,
+        contentStatus: 'generated',
+        generatedAt: new Date().toISOString()
+    };
+
+    return queueItem;
 }
 
 async function createScheduleAndQueue(payload) {
@@ -197,6 +219,11 @@ async function publishQueueItem(queueItemId) {
         throw new Error('Connected account not found for this queue item.');
     }
 
+    const schedule = state.schedules.find((item) => item.id === queueItem.scheduleId);
+    if (!schedule) {
+        throw new Error('Publishing schedule not found for this queue item.');
+    }
+
     if (queueItem.status === 'published') {
         return queueItem;
     }
@@ -209,6 +236,10 @@ async function publishQueueItem(queueItemId) {
     });
 
     try {
+        if (!queueItem.content || queueItem.metadata?.contentStatus === 'pending_generation' || queueItem.content === PENDING_CONTENT_PLACEHOLDER) {
+            await generateContentForQueueItem(queueItem, schedule);
+        }
+
         const result = await publishToPlatform(queueItem.platform, account, queueItem);
         queueItem.status = 'published';
         queueItem.publishedAt = new Date().toISOString();
@@ -275,6 +306,7 @@ function startScheduler() {
 module.exports = {
     createScheduleAndQueue,
     generateQueueItemsForSchedule,
+    generateContentForQueueItem,
     publishQueueItem,
     publishDueQueueItems,
     startScheduler
