@@ -198,9 +198,144 @@
             font-size: 0.92rem;
             line-height: 1.5;
         }
+        .queue-card {
+            background: linear-gradient(180deg, rgba(148,163,184,0.16), rgba(15,23,42,0.42));
+            border: 1px solid rgba(255,255,255,0.10);
+            border-radius: 22px;
+            padding: 1rem;
+            display: grid;
+            gap: 0.9rem;
+        }
+        .queue-card-top {
+            display: flex;
+            justify-content: space-between;
+            gap: 0.8rem;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .queue-date {
+            color: rgba(255,255,255,0.82);
+            font-size: 0.92rem;
+            font-weight: 600;
+        }
+        .queue-type {
+            background: rgba(34,211,238,0.18);
+            color: #67e8f9;
+            border: 1px solid rgba(34,211,238,0.18);
+            padding: 0.35rem 0.8rem;
+            border-radius: 999px;
+            font-size: 0.76rem;
+            font-weight: 700;
+            text-transform: lowercase;
+        }
+        .queue-copy {
+            color: rgba(255,255,255,0.95);
+            font-size: 0.95rem;
+            line-height: 1.65;
+            font-weight: 500;
+        }
+        .queue-metrics {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 0.75rem;
+            padding: 0.9rem 1rem;
+            border-radius: 16px;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.08);
+        }
+        .metric-label {
+            color: rgba(255,255,255,0.58);
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            font-size: 0.72rem;
+            font-weight: 700;
+            margin-bottom: 0.3rem;
+        }
+        .metric-value {
+            color: #22d3ee;
+            font-size: 1.02rem;
+            font-weight: 800;
+        }
+        .queue-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 0.55rem;
+            flex-wrap: wrap;
+        }
+        .queue-btn {
+            padding: 0.55rem 0.9rem;
+            border-radius: 12px;
+            border: 1px solid rgba(255,255,255,0.16);
+            background: rgba(255,255,255,0.08);
+            color: #fff;
+            font-size: 0.9rem;
+            font-weight: 700;
+            cursor: pointer;
+        }
+        .queue-btn.primary {
+            background: linear-gradient(135deg, #06b6d4, #2563eb);
+            border: none;
+        }
+        .queue-btn:disabled {
+            opacity: 0.55;
+            cursor: not-allowed;
+        }
+        .queue-status-line {
+            color: rgba(255,255,255,0.68);
+            font-size: 0.86rem;
+        }
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(2,6,23,0.72);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+            z-index: 50;
+        }
+        .modal-card {
+            width: min(760px, 100%);
+            background: linear-gradient(180deg, rgba(30,41,59,0.98), rgba(15,23,42,0.98));
+            border: 1px solid rgba(255,255,255,0.10);
+            border-radius: 24px;
+            padding: 1.25rem;
+            display: grid;
+            gap: 1rem;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.42);
+        }
+        .modal-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 1rem;
+        }
+        .modal-head h3 {
+            font-size: 1.2rem;
+        }
+        .modal-close {
+            background: rgba(255,255,255,0.08);
+            border: 1px solid rgba(255,255,255,0.14);
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            color: #fff;
+            font-size: 1.1rem;
+            cursor: pointer;
+        }
+        .modal-card textarea {
+            min-height: 240px;
+        }
+        .modal-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 0.7rem;
+            flex-wrap: wrap;
+        }
         @media (max-width: 960px) {
             .span-4, .span-5, .span-7, .span-12 { grid-column: span 12; }
             .row-2 { grid-template-columns: 1fr; }
+            .queue-metrics { grid-template-columns: 1fr; }
         }
     </style>
 </head>
@@ -311,6 +446,21 @@
         </div>
     </div>
 
+    <div class="modal-overlay" id="queueEditorModal">
+        <div class="modal-card">
+            <div class="modal-head">
+                <h3>Edit Queue Post</h3>
+                <button class="modal-close" id="queueEditorClose" type="button">×</button>
+            </div>
+            <div class="meta" id="queueEditorMeta">Update the scheduled post content before publishing.</div>
+            <textarea id="queueEditorContent" placeholder="Edit the post content here"></textarea>
+            <div class="modal-actions">
+                <button class="queue-btn" id="queueEditorCancel" type="button">Cancel</button>
+                <button class="queue-btn primary" id="queueEditorSave" type="button">Save Changes</button>
+            </div>
+        </div>
+    </div>
+
     <script>
         const apiEndpoints = {
             countries: '/.netlify/functions/countries',
@@ -318,6 +468,7 @@
             publishingProviders: '/.netlify/functions/publishing-providers',
             publishingSchedules: '/.netlify/functions/publishing-schedules',
             publishQueueItem: (queueItemId) => `/.netlify/functions/publishing-queue-publish?id=${encodeURIComponent(queueItemId)}`,
+            updateQueueItem: (queueItemId) => `/.netlify/functions/publishing-queue-item?id=${encodeURIComponent(queueItemId)}`,
             linkedInLogin: '/.netlify/functions/linkedin-oauth-start'
         };
 
@@ -330,7 +481,15 @@
         const oauthBanner = document.getElementById('oauthBanner');
         const linkedinOAuthStatus = document.getElementById('linkedinOAuthStatus');
         const linkedinLoginBtn = document.getElementById('linkedinLoginBtn');
+        const queueEditorModal = document.getElementById('queueEditorModal');
+        const queueEditorContent = document.getElementById('queueEditorContent');
+        const queueEditorMeta = document.getElementById('queueEditorMeta');
+        const queueEditorClose = document.getElementById('queueEditorClose');
+        const queueEditorCancel = document.getElementById('queueEditorCancel');
+        const queueEditorSave = document.getElementById('queueEditorSave');
         let allAccounts = [];
+        let currentQueue = [];
+        let editingQueueItemId = '';
 
         linkedinLoginBtn.href = apiEndpoints.linkedInLogin;
 
@@ -457,6 +616,50 @@
             return readJsonResponse(response);
         }
 
+        function escapeHtml(value) {
+            return String(value || '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+
+        function formatQueueType(item) {
+            if (item.metadata?.holiday) {
+                return item.metadata.holiday;
+            }
+
+            const rawType = item.metadata?.postType || item.metadata?.type || 'scheduled';
+            return rawType.replace(/_/g, ' ');
+        }
+
+        function countHashtags(content) {
+            return (String(content || '').match(/#\w+/g) || []).length;
+        }
+
+        function calculateEngagementScore(content, item) {
+            let score = 72;
+            const text = String(content || '');
+
+            if (item.metadata?.holiday) score += 14;
+            if (text.length >= 90 && text.length <= 320) score += 12;
+            else if (text.length > 500) score -= 8;
+
+            const hashtagCount = countHashtags(text);
+            score += Math.min(hashtagCount * 3, 15);
+
+            if (/[?]/.test(text)) score += 4;
+            if (/[!]/.test(text)) score += 3;
+
+            const ctaWords = ['comment', 'share', 'learn', 'discover', 'connect', 'visit'];
+            if (ctaWords.some((word) => text.toLowerCase().includes(word))) {
+                score += 8;
+            }
+
+            return Math.max(58, Math.min(score, 99));
+        }
+
         function renderAccounts(accounts) {
             const container = document.getElementById('accountsList');
             allAccounts = accounts;
@@ -516,27 +719,82 @@
             `).join('');
         }
 
+        function renderQueueItemCard(item) {
+            const scheduledDate = new Date(item.scheduledFor);
+            const shortDate = scheduledDate.toLocaleDateString();
+            const fullDate = scheduledDate.toLocaleDateString(undefined, {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+                weekday: 'long'
+            });
+            const type = formatQueueType(item);
+            const rawContent = String(item.content || 'Content will be generated automatically when this scheduled item is published.');
+            const preview = rawContent.length > 340 ? `${rawContent.slice(0, 340)}...` : rawContent;
+            const escapedPreview = escapeHtml(preview).replace(/\n/g, '<br>');
+            const hashtagCount = countHashtags(rawContent);
+            const engagementScore = calculateEngagementScore(rawContent, item);
+            const isPublished = item.status === 'published';
+            const isPublishing = item.status === 'publishing';
+            const statusClass = item.status === 'failed' ? 'failed' : item.status === 'scheduled' ? 'scheduled' : '';
+            const statusLine = item.error
+                ? `Error: ${escapeHtml(item.error)}`
+                : isPublished
+                    ? 'Published successfully.'
+                    : isPublishing
+                        ? 'Publishing now...'
+                        : item.metadata?.contentStatus === 'edited'
+                            ? 'Edited manually. Ready for publish.'
+                            : 'Ready for publish.';
+
+            return `
+                <article class="queue-card">
+                    <div class="queue-card-top">
+                        <div class="queue-date">${shortDate}</div>
+                        <div class="actions">
+                            <span class="pill ${statusClass}">${escapeHtml(item.status)}</span>
+                            <span class="queue-type">${escapeHtml(type)}</span>
+                        </div>
+                    </div>
+                    <div class="queue-copy">
+                        📅 ${escapeHtml(fullDate)} - <strong>${escapeHtml(type.toUpperCase())}</strong> ${escapedPreview}
+                    </div>
+                    <div class="queue-metrics">
+                        <div>
+                            <div class="metric-label">Length</div>
+                            <div class="metric-value">${rawContent.length} chars</div>
+                        </div>
+                        <div>
+                            <div class="metric-label">Hashtags</div>
+                            <div class="metric-value">${hashtagCount}</div>
+                        </div>
+                        <div>
+                            <div class="metric-label">Engagement Score</div>
+                            <div class="metric-value">${engagementScore}%</div>
+                        </div>
+                    </div>
+                    <div class="queue-status-line">${statusLine}</div>
+                    <div class="queue-actions">
+                        <button class="queue-btn" type="button" onclick="copyQueueItem('${item.id}')">Copy</button>
+                        <button class="queue-btn" type="button" onclick="openQueueEditor('${item.id}')">Edit</button>
+                        <button class="queue-btn primary" type="button" onclick="publishNow('${item.id}')" ${isPublished || isPublishing ? 'disabled' : ''}>
+                            ${isPublished ? 'Published' : isPublishing ? 'Publishing...' : 'Publish Now'}
+                        </button>
+                    </div>
+                </article>
+            `;
+        }
+
         function renderQueue(queue) {
             const container = document.getElementById('queueList');
+            currentQueue = [...queue].sort((a, b) => new Date(a.scheduledFor) - new Date(b.scheduledFor));
             if (!queue.length) {
                 container.innerHTML = '<div class="meta">No queue items yet.</div>';
                 return;
             }
 
-            const sorted = [...queue].sort((a, b) => new Date(a.scheduledFor) - new Date(b.scheduledFor));
-            container.innerHTML = sorted.slice(0, 12).map((item) => `
-                <article class="list-item">
-                    <span class="pill ${item.status === 'failed' ? 'failed' : item.status === 'scheduled' ? 'scheduled' : ''}">${item.status}</span>
-                    <h3>${item.platform} · ${new Date(item.scheduledFor).toLocaleString()}</h3>
-                    <div class="meta">
-                        ${String(item.content || 'Content will be generated automatically when this item is published.').slice(0, 140).replace(/</g, '&lt;')}${String(item.content || '').length > 140 ? '...' : ''}<br>
-                        ${item.error ? `Error: ${item.error}` : 'Ready for publish'}
-                    </div>
-                    <div class="actions">
-                        <button class="secondary small" onclick="publishNow('${item.id}')">Publish Now</button>
-                    </div>
-                </article>
-            `).join('');
+            const sorted = currentQueue;
+            container.innerHTML = sorted.slice(0, 12).map(renderQueueItemCard).join('');
         }
 
         async function refreshOverview() {
@@ -587,8 +845,111 @@
             }
         }
 
+        function closeQueueEditor() {
+            editingQueueItemId = '';
+            queueEditorContent.value = '';
+            queueEditorMeta.textContent = 'Update the scheduled post content before publishing.';
+            queueEditorModal.style.display = 'none';
+        }
+
+        function openQueueEditor(queueItemId) {
+            const item = currentQueue.find((entry) => entry.id === queueItemId);
+            if (!item) {
+                alert('Queue item not found.');
+                return;
+            }
+
+            editingQueueItemId = queueItemId;
+            queueEditorContent.value = item.content || '';
+            queueEditorMeta.textContent = `Editing ${new Date(item.scheduledFor).toLocaleString()} · ${formatQueueType(item)}`;
+            queueEditorModal.style.display = 'flex';
+            queueEditorContent.focus();
+            queueEditorContent.setSelectionRange(queueEditorContent.value.length, queueEditorContent.value.length);
+        }
+
+        async function saveQueueEdit() {
+            const nextContent = queueEditorContent.value.trim();
+            if (!editingQueueItemId) {
+                return;
+            }
+
+            if (!nextContent) {
+                alert('Post content cannot be empty.');
+                return;
+            }
+
+            queueEditorSave.disabled = true;
+            const originalLabel = queueEditorSave.textContent;
+            queueEditorSave.textContent = 'Saving...';
+
+            try {
+                const response = await fetch(apiEndpoints.updateQueueItem(editingQueueItemId), {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ content: nextContent })
+                });
+                const result = await readJsonResponse(response);
+                if (!result.success) {
+                    throw new Error(result.details || result.error || 'Failed to save changes');
+                }
+
+                closeQueueEditor();
+                showOAuthBanner('Queue post updated successfully.');
+                await refreshOverview();
+            } catch (error) {
+                alert(error.message || 'Failed to save changes');
+            } finally {
+                queueEditorSave.disabled = false;
+                queueEditorSave.textContent = originalLabel;
+            }
+        }
+
+        async function copyQueueItem(queueItemId) {
+            const item = currentQueue.find((entry) => entry.id === queueItemId);
+            if (!item) {
+                alert('Queue item not found.');
+                return;
+            }
+
+            const text = String(item.content || '');
+            if (!text.trim()) {
+                alert('There is no generated content to copy yet.');
+                return;
+            }
+
+            try {
+                if (navigator.clipboard?.writeText) {
+                    await navigator.clipboard.writeText(text);
+                } else {
+                    const helper = document.createElement('textarea');
+                    helper.value = text;
+                    helper.setAttribute('readonly', '');
+                    helper.style.position = 'absolute';
+                    helper.style.left = '-9999px';
+                    document.body.appendChild(helper);
+                    helper.select();
+                    document.execCommand('copy');
+                    document.body.removeChild(helper);
+                }
+
+                showOAuthBanner('Queue post copied to clipboard.');
+            } catch (error) {
+                alert('Failed to copy the post content.');
+            }
+        }
+
         window.publishNow = publishNow;
+        window.openQueueEditor = openQueueEditor;
+        window.copyQueueItem = copyQueueItem;
         schedulePlatformSelect.addEventListener('change', updateAccountOptions);
+        queueEditorClose.addEventListener('click', closeQueueEditor);
+        queueEditorCancel.addEventListener('click', closeQueueEditor);
+        queueEditorSave.addEventListener('click', saveQueueEdit);
+        queueEditorModal.addEventListener('click', (event) => {
+            if (event.target === queueEditorModal) {
+                closeQueueEditor();
+            }
+        });
         handleOAuthResult();
         loadCountryOptions();
         loadProviderStatus();

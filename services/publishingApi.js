@@ -1,4 +1,4 @@
-const { readState, saveAccount, createId } = require('./publishingStore');
+const { readState, saveAccount, updateQueueItem, createId } = require('./publishingStore');
 const { createScheduleAndQueue, publishQueueItem, publishDueQueueItems } = require('./schedulerService');
 const { getLinkedInOAuthConfig, isLinkedInOAuthConfigured } = require('./oauthService');
 
@@ -155,6 +155,51 @@ async function publishLinkedInQueueItem(queueItemId) {
     return publishQueueItem(queueItemId);
 }
 
+async function updateLinkedInQueueItem(queueItemId, payload) {
+    const state = await readState();
+    const existingItem = state.queue.find((item) => item.id === queueItemId);
+    if (!existingItem) {
+        const error = new Error('Queue item not found');
+        error.statusCode = 404;
+        throw error;
+    }
+
+    if (existingItem.platform !== 'linkedin') {
+        const error = new Error('Only linkedin queue items can be updated.');
+        error.statusCode = 400;
+        throw error;
+    }
+
+    const nextContent = String(payload.content || '').trim();
+    if (!nextContent) {
+        const error = new Error('content is required');
+        error.statusCode = 400;
+        throw error;
+    }
+
+    const metadata = {
+        ...(existingItem.metadata || {}),
+        ...(payload.metadata || {}),
+        contentStatus: 'edited',
+        editedAt: new Date().toISOString()
+    };
+
+    const updatedItem = {
+        ...existingItem,
+        content: nextContent,
+        metadata,
+        updatedAt: new Date().toISOString()
+    };
+
+    await updateQueueItem(queueItemId, {
+        content: updatedItem.content,
+        metadata: updatedItem.metadata,
+        updatedAt: updatedItem.updatedAt
+    });
+
+    return updatedItem;
+}
+
 async function runScheduledQueuePublish(options = {}) {
     return publishDueQueueItems(options);
 }
@@ -169,5 +214,6 @@ module.exports = {
     getLinkedInProviderStatus,
     createLinkedInSchedule,
     publishLinkedInQueueItem,
+    updateLinkedInQueueItem,
     runScheduledQueuePublish
 };

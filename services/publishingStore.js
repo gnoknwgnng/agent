@@ -446,6 +446,56 @@ async function updateQueueItemStatus(queueItemId, patch) {
     return queueItem;
 }
 
+async function updateQueueItem(queueItemId, patch) {
+    if (isSupabaseEnabled) {
+        const updatePayload = {};
+
+        if (Object.prototype.hasOwnProperty.call(patch, 'status')) {
+            updatePayload.status = patch.status;
+        }
+        if (Object.prototype.hasOwnProperty.call(patch, 'updatedAt')) {
+            updatePayload.updated_at = patch.updatedAt;
+        }
+        if (Object.prototype.hasOwnProperty.call(patch, 'publishedAt')) {
+            updatePayload.published_at = patch.publishedAt;
+        }
+        if (Object.prototype.hasOwnProperty.call(patch, 'providerId')) {
+            updatePayload.provider_id = patch.providerId;
+        }
+        if (Object.prototype.hasOwnProperty.call(patch, 'providerResponse')) {
+            updatePayload.provider_response = patch.providerResponse;
+        }
+        if (Object.prototype.hasOwnProperty.call(patch, 'error')) {
+            updatePayload.error = patch.error;
+        }
+        if (Object.prototype.hasOwnProperty.call(patch, 'errorStatus')) {
+            updatePayload.error_status = patch.errorStatus;
+        }
+        if (Object.prototype.hasOwnProperty.call(patch, 'content')) {
+            updatePayload.content = patch.content;
+        }
+        if (Object.prototype.hasOwnProperty.call(patch, 'metadata')) {
+            updatePayload.metadata = patch.metadata;
+        }
+        if (Object.prototype.hasOwnProperty.call(patch, 'scheduledFor')) {
+            updatePayload.scheduled_for = patch.scheduledFor;
+        }
+
+        await patchSupabaseRows('queue_items', { id: `eq.${queueItemId}` }, updatePayload);
+        return queueItemId;
+    }
+
+    const state = await readLocalState();
+    const queueItem = state.queue.find((item) => item.id === queueItemId);
+    if (!queueItem) {
+        return null;
+    }
+
+    Object.assign(queueItem, patch);
+    await writeLocalState(state);
+    return queueItem;
+}
+
 function createId(prefix) {
     return `${prefix}_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
 }
@@ -458,5 +508,6 @@ module.exports = {
     saveQueueItems,
     saveQueueItem,
     updateQueueItemStatus,
+    updateQueueItem,
     createId
 };
