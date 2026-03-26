@@ -263,12 +263,14 @@ Requirements:
         };
     }
 
-    async generateFestivalPost(date, holiday) {
+    async generateFestivalPost(date, holiday, options = {}) {
         const platformConfig = this.getPlatformConfig();
         const dateFormatted = this.formatDate(date);
+        const skipAi = Boolean(options.skipAi);
 
-        // Try AI generation first
-        const aiPrompt = `Create a ${platformConfig.systemStyle} ${platformConfig.name} post for ${holiday.name} on ${dateFormatted.full} (${dateFormatted.weekday}). 
+        if (!skipAi) {
+            // Try AI generation first
+            const aiPrompt = `Create a ${platformConfig.systemStyle} ${platformConfig.name} post for ${holiday.name} on ${dateFormatted.full} (${dateFormatted.weekday}). 
 
 Company: ${this.companyInfo.name || 'Our Company'}
 Website: ${this.companyInfo.website || ''}
@@ -286,10 +288,11 @@ Requirements:
 - Match the tone users expect on ${platformConfig.name}
 - Maximum ${platformConfig.maxWords} words`;
 
-        const aiContent = await this.generateContentWithAI(aiPrompt);
+            const aiContent = await this.generateContentWithAI(aiPrompt);
 
-        if (aiContent) {
-            return aiContent;
+            if (aiContent) {
+                return aiContent;
+            }
         }
 
         // Fallback to template-based generation
@@ -345,9 +348,10 @@ Visit: ${this.companyInfo.website || ''}
         return post;
     }
 
-    async generateBusinessPost(date, postType = 'service') {
+    async generateBusinessPost(date, postType = 'service', options = {}) {
         const platformConfig = this.getPlatformConfig();
         const dateFormatted = this.formatDate(date);
+        const skipAi = Boolean(options.skipAi);
 
         const businessPostTemplates = {
             service: {
@@ -374,8 +378,9 @@ Visit: ${this.companyInfo.website || ''}
 
         const template = businessPostTemplates[postType] || businessPostTemplates.service;
 
-        // Try AI generation first
-        const aiPrompt = `Create a ${platformConfig.systemStyle} ${platformConfig.name} post for ${dateFormatted.full} (${dateFormatted.weekday}) focused on ${template.theme}.
+        if (!skipAi) {
+            // Try AI generation first
+            const aiPrompt = `Create a ${platformConfig.systemStyle} ${platformConfig.name} post for ${dateFormatted.full} (${dateFormatted.weekday}) focused on ${template.theme}.
 
 Company: ${this.companyInfo.name || 'Our Company'}
 Website: ${this.companyInfo.website || ''}
@@ -394,10 +399,11 @@ Requirements:
 - Match the tone users expect on ${platformConfig.name}
 - Maximum ${platformConfig.maxWords} words`;
 
-        const aiContent = await this.generateContentWithAI(aiPrompt);
+            const aiContent = await this.generateContentWithAI(aiPrompt);
 
-        if (aiContent) {
-            return aiContent;
+            if (aiContent) {
+                return aiContent;
+            }
         }
 
         // Fallback to template-based generation
@@ -427,7 +433,7 @@ ${hashtagsText}`;
         return post;
     }
 
-    async generateCalendar(startDate, endDate, countryCode = 'US') {
+    async generateCalendar(startDate, endDate, countryCode = 'US', options = {}) {
         const dates = this.getDateRange(startDate, endDate);
         const year = new Date(startDate).getFullYear();
         const holidays = await this.getHolidays(year, countryCode);
@@ -448,7 +454,7 @@ ${hashtagsText}`;
             try {
                 if (holiday) {
                     // Generate festival post
-                    post = await this.generateFestivalPost(date, holiday);
+                    post = await this.generateFestivalPost(date, holiday, options);
                     calendar.push({
                         date: date.toISOString().split('T')[0],
                         type: 'festival',
@@ -459,7 +465,7 @@ ${hashtagsText}`;
                 } else {
                     // Generate business post
                     const postType = postTypes[postTypeIndex % postTypes.length];
-                    post = await this.generateBusinessPost(date, postType);
+                    post = await this.generateBusinessPost(date, postType, options);
                     calendar.push({
                         date: date.toISOString().split('T')[0],
                         type: 'business',
@@ -480,7 +486,7 @@ ${hashtagsText}`;
                     // Retry this post with the new model
                     try {
                         if (holiday) {
-                            post = await this.generateFestivalPost(date, holiday);
+                            post = await this.generateFestivalPost(date, holiday, options);
                             calendar.push({
                                 date: date.toISOString().split('T')[0],
                                 type: 'festival',
@@ -490,7 +496,7 @@ ${hashtagsText}`;
                             });
                         } else {
                             const postType = postTypes[postTypeIndex % postTypes.length];
-                            post = await this.generateBusinessPost(date, postType);
+                            post = await this.generateBusinessPost(date, postType, options);
                             calendar.push({
                                 date: date.toISOString().split('T')[0],
                                 type: 'business',
@@ -504,10 +510,10 @@ ${hashtagsText}`;
                         console.log(`❌ New model ${currentModel} also failed, using template for this post`);
                         // Use template-based generation as final fallback
                         if (holiday) {
-                            post = await this.generateFestivalPost(date, holiday); // This will use template fallback
+                            post = await this.generateFestivalPost(date, holiday, { ...options, skipAi: true }); // This will use template fallback
                         } else {
                             const postType = postTypes[postTypeIndex % postTypes.length];
-                            post = await this.generateBusinessPost(date, postType); // This will use template fallback
+                            post = await this.generateBusinessPost(date, postType, { ...options, skipAi: true }); // This will use template fallback
                             postTypeIndex++;
                         }
                         calendar.push({

@@ -836,6 +836,20 @@
             document.getElementById('endDate').value = nextMonth.toISOString().split('T')[0];
         });
 
+        async function readJsonResponse(response) {
+            const raw = await response.text();
+
+            try {
+                return JSON.parse(raw);
+            } catch (error) {
+                if (!response.ok) {
+                    throw new Error(`Request failed with status ${response.status}.`);
+                }
+
+                throw new Error('The server returned an invalid response.');
+            }
+        }
+
         // Form submission
         document.getElementById('postForm').addEventListener('submit', async function(e) {
             e.preventDefault();
@@ -857,7 +871,7 @@
                     body: JSON.stringify(data)
                 });
                 
-                const result = await response.json();
+                const result = await readJsonResponse(response);
                 
                 if (result.success) {
                     currentCalendar = result.calendar;
@@ -867,7 +881,7 @@
                 }
             } catch (error) {
                 console.error('Error:', error);
-                alert('Failed to generate posts. Please try again.');
+                alert(error.message || 'Failed to generate posts. Please try again.');
                 document.querySelector('.form-section').style.display = 'block';
             } finally {
                 document.getElementById('loading').style.display = 'none';
@@ -1183,7 +1197,7 @@
                     })
                 });
                 
-                const result = await response.json();
+                const result = await readJsonResponse(response);
                 
                 // Remove loading message
                 chatArea.removeChild(loadingDiv);

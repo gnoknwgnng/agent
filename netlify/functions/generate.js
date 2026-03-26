@@ -68,10 +68,14 @@ exports.handler = async (event, context) => {
         }
 
         // Set company information
-        await generator.setCompanyInfo(companyName, website, processedServices, industry);
+        await generator.setCompanyInfo(companyName, website, processedServices, industry, {
+            skipAiHashtags: true
+        });
 
         // Generate calendar
-        const calendar = await generator.generateCalendar(startDate, endDate, countryCode);
+        const calendar = await generator.generateCalendar(startDate, endDate, countryCode, {
+            skipAi: true
+        });
 
         // Return in requested format
         if (format === 'text') {
