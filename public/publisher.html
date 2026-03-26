@@ -409,6 +409,7 @@
                     <label>Country Code
                         <select name="countryCode" id="countryCodeSelect">
                             <option value="US">US - United States</option>
+                            <option value="IN">IN - India</option>
                         </select>
                     </label>
                     <div class="row-2">
@@ -564,7 +565,7 @@
                 const hasUS = normalizedCountries.some((item) => item.code === 'US');
                 countryCodeSelect.value = hasUS ? 'US' : normalizedCountries[0].code;
             } catch (error) {
-                // Keep the default US option if loading countries fails.
+                // Keep the built-in US and IN options if loading countries fails.
             }
         }
 
