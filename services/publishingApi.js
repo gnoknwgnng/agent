@@ -1,5 +1,10 @@
 const { readState, saveAccount, updateQueueItem, createId } = require('./publishingStore');
-const { createScheduleAndQueue, publishQueueItem, publishDueQueueItems } = require('./schedulerService');
+const {
+    createScheduleAndQueue,
+    publishQueueItem,
+    publishDueQueueItems,
+    hydratePendingQueueItems
+} = require('./schedulerService');
 const { getLinkedInOAuthConfig, isLinkedInOAuthConfigured } = require('./oauthService');
 
 function filterLinkedInState(state) {
@@ -35,7 +40,9 @@ function normalizeServicesInput(services) {
 
 async function getLinkedInOverview() {
     const state = await readState();
-    return filterLinkedInState(state);
+    const linkedInState = filterLinkedInState(state);
+    await hydratePendingQueueItems(linkedInState.queue, linkedInState.schedules);
+    return linkedInState;
 }
 
 async function getLinkedInAccounts() {
@@ -50,7 +57,9 @@ async function getLinkedInSchedules() {
 
 async function getLinkedInQueue() {
     const state = await readState();
-    return filterLinkedInState(state).queue;
+    const linkedInState = filterLinkedInState(state);
+    await hydratePendingQueueItems(linkedInState.queue, linkedInState.schedules);
+    return linkedInState.queue;
 }
 
 async function createManualLinkedInAccount(payload) {

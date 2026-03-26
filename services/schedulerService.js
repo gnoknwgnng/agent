@@ -10,6 +10,7 @@ const { publishToPlatform } = require('./platformPublishers');
 const LinkedInPostGenerator = require('../linkedinPostGenerator');
 
 const PENDING_CONTENT_PLACEHOLDER = 'Content will be generated automatically when this scheduled item is published.';
+const ROTATING_POST_TYPES = ['service', 'tip', 'motivation', 'ai_tool'];
 
 function startOfDay(date) {
     const d = new Date(date);
@@ -31,6 +32,57 @@ function addDays(date, days) {
 
 function formatDate(date) {
     return new Date(date).toISOString().split('T')[0];
+}
+
+async function createGeneratorForSchedule(schedule) {
+    const generator = new LinkedInPostGenerator();
+    generator.setPlatform(schedule.platform);
+    await generator.setCompanyInfo(
+        schedule.companyName,
+        schedule.website,
+        schedule.services,
+        schedule.industry,
+        { skipAiHashtags: true }
+    );
+    return generator;
+}
+
+async function loadHolidaysByYear(generator, slots, countryCode) {
+    const years = [...new Set(slots.map((slot) => new Date(slot).getFullYear()))];
+    const entries = await Promise.all(
+        years.map(async (year) => [year, await generator.getHolidays(year, countryCode || 'US')])
+    );
+
+    return new Map(entries);
+}
+
+function needsQueueContent(queueItem) {
+    return (
+        !queueItem.content ||
+        queueItem.content === PENDING_CONTENT_PLACEHOLDER ||
+        queueItem.metadata?.contentStatus === 'pending_generation'
+    );
+}
+
+async function generateQueueContent(generator, schedule, scheduledFor, postType, holidaysByYear) {
+    const scheduledDate = new Date(scheduledFor);
+    const holidays = holidaysByYear.get(scheduledDate.getFullYear()) || [];
+    const holiday = generator.findHolidayForDate(scheduledDate, holidays);
+    const generatedPost = holiday
+        ? await generator.generateFestivalPost(scheduledDate, holiday, { skipAi: true })
+        : await generator.generateBusinessPost(scheduledDate, postType, { skipAi: true });
+
+    return {
+        content: generatedPost || PENDING_CONTENT_PLACEHOLDER,
+        metadata: {
+            type: holiday ? 'festival' : 'business',
+            holiday: holiday?.name || null,
+            postType: holiday ? null : postType,
+            contentStatus: generatedPost ? 'generated' : 'pending_generation',
+            generatedAt: generatedPost ? new Date().toISOString() : null,
+            generationMode: 'fast_template'
+        }
+    };
 }
 
 function formatPublishError(error) {
@@ -89,10 +141,26 @@ async function generateQueueItemsForSchedule(schedule) {
         schedule.endDate,
         schedule.preferredHour || 10
     );
-    const postTypes = ['service', 'tip', 'motivation', 'ai_tool'];
+    if (!slots.length) {
+        return [];
+    }
 
-    return slots.map((scheduledFor, index) => {
-        return {
+    const generator = await createGeneratorForSchedule(schedule);
+    const holidaysByYear = await loadHolidaysByYear(generator, slots, schedule.countryCode);
+
+    const queueItems = [];
+    for (let index = 0; index < slots.length; index += 1) {
+        const scheduledFor = slots[index];
+        const postType = ROTATING_POST_TYPES[index % ROTATING_POST_TYPES.length];
+        const generated = await generateQueueContent(
+            generator,
+            schedule,
+            scheduledFor,
+            postType,
+            holidaysByYear
+        );
+
+        queueItems.push({
             id: createId('queue'),
             scheduleId: schedule.id,
             accountId: schedule.accountId,
@@ -100,53 +168,94 @@ async function generateQueueItemsForSchedule(schedule) {
             status: 'scheduled',
             scheduledFor: scheduledFor.toISOString(),
             createdAt: new Date().toISOString(),
-            content: PENDING_CONTENT_PLACEHOLDER,
+            content: generated.content,
             mediaUrl: schedule.defaultImageUrl || '',
             recipientPhone: schedule.defaultRecipientPhone || '',
-            metadata: {
-                type: 'pending',
-                holiday: null,
-                postType: postTypes[index % postTypes.length],
-                contentStatus: 'pending_generation'
-            }
-        };
-    });
+            metadata: generated.metadata
+        });
+    }
+
+    return queueItems;
 }
 
 async function generateContentForQueueItem(queueItem, schedule) {
-    const generator = new LinkedInPostGenerator();
-    generator.setPlatform(schedule.platform);
-    await generator.setCompanyInfo(
-        schedule.companyName,
-        schedule.website,
-        schedule.services,
-        schedule.industry,
-        { skipAiHashtags: true }
+    const generator = await createGeneratorForSchedule(schedule);
+    const holidaysByYear = await loadHolidaysByYear(
+        generator,
+        [new Date(queueItem.scheduledFor)],
+        schedule.countryCode
+    );
+    const fallbackPostType = queueItem.metadata?.postType || ROTATING_POST_TYPES[0];
+    const generatedItem = await generateQueueContent(
+        generator,
+        schedule,
+        queueItem.scheduledFor,
+        fallbackPostType,
+        holidaysByYear
     );
 
-    const scheduledDate = formatDate(queueItem.scheduledFor);
-    const calendar = await generator.generateCalendar(
-        scheduledDate,
-        scheduledDate,
-        schedule.countryCode || 'US'
-    );
-
-    if (!calendar.length) {
-        throw new Error('No content could be generated for the scheduled publish date.');
-    }
-
-    const generatedItem = calendar[0];
-    queueItem.content = generatedItem.post;
+    queueItem.content = generatedItem.content;
     queueItem.metadata = {
         ...queueItem.metadata,
-        type: generatedItem.type,
-        holiday: generatedItem.holiday || null,
-        postType: generatedItem.postType || queueItem.metadata?.postType || null,
-        contentStatus: 'generated',
-        generatedAt: new Date().toISOString()
+        ...generatedItem.metadata
     };
 
     return queueItem;
+}
+
+async function hydratePendingQueueItems(queueItems, schedules) {
+    const pendingItems = (queueItems || []).filter((item) =>
+        item.platform === 'linkedin' && needsQueueContent(item)
+    );
+
+    if (!pendingItems.length) {
+        return queueItems;
+    }
+
+    const schedulesById = new Map((schedules || []).map((schedule) => [schedule.id, schedule]));
+    const pendingBySchedule = new Map();
+
+    for (const item of pendingItems) {
+        const collection = pendingBySchedule.get(item.scheduleId) || [];
+        collection.push(item);
+        pendingBySchedule.set(item.scheduleId, collection);
+    }
+
+    for (const [scheduleId, items] of pendingBySchedule.entries()) {
+        const schedule = schedulesById.get(scheduleId);
+        if (!schedule) {
+            continue;
+        }
+
+        const generator = await createGeneratorForSchedule(schedule);
+        const holidaysByYear = await loadHolidaysByYear(
+            generator,
+            items.map((item) => new Date(item.scheduledFor)),
+            schedule.countryCode
+        );
+
+        for (let index = 0; index < items.length; index += 1) {
+            const item = items[index];
+            const fallbackPostType = item.metadata?.postType || ROTATING_POST_TYPES[index % ROTATING_POST_TYPES.length];
+            const generated = await generateQueueContent(
+                generator,
+                schedule,
+                item.scheduledFor,
+                fallbackPostType,
+                holidaysByYear
+            );
+
+            item.content = generated.content;
+            item.metadata = {
+                ...(item.metadata || {}),
+                ...generated.metadata
+            };
+            item.updatedAt = new Date().toISOString();
+            await saveQueueItem(item);
+        }
+    }
+
+    return queueItems;
 }
 
 async function createScheduleAndQueue(payload) {
@@ -307,6 +416,7 @@ module.exports = {
     createScheduleAndQueue,
     generateQueueItemsForSchedule,
     generateContentForQueueItem,
+    hydratePendingQueueItems,
     publishQueueItem,
     publishDueQueueItems,
     startScheduler
