@@ -334,22 +334,60 @@
         }
         .auth-card {
             display: grid;
-            gap: 0.7rem;
-            padding: 0.95rem;
-            border-radius: 16px;
-            border: 1px solid rgba(255,255,255,0.12);
-            background: rgba(5, 12, 34, 0.52);
+            gap: 1rem;
+            padding: 1.25rem;
+            border-radius: 20px;
+            border: 1px solid rgba(140, 163, 255, 0.28);
+            background: rgba(7, 12, 28, 0.8);
             margin-bottom: 0.85rem;
+        }
+        .auth-title {
+            font-size: 1.9rem;
+            letter-spacing: -0.02em;
         }
         .auth-row {
             display: grid;
-            grid-template-columns: repeat(2, minmax(0, 1fr));
             gap: 0.7rem;
         }
+        .auth-row label {
+            color: rgba(182, 200, 255, 0.86);
+            font-size: 0.92rem;
+        }
+        .auth-row input {
+            border-radius: 999px;
+            padding: 0.95rem 1rem;
+            border: 1px solid rgba(118, 145, 255, 0.72);
+            background: rgba(11, 17, 38, 0.78);
+            color: #eef4ff;
+            outline: none;
+        }
+        .auth-row input:focus {
+            box-shadow: 0 0 0 3px rgba(95, 132, 255, 0.24);
+        }
         .auth-actions {
-            display: flex;
-            gap: 0.6rem;
-            flex-wrap: wrap;
+            display: grid;
+            gap: 0.65rem;
+        }
+        .auth-divider {
+            text-align: center;
+            color: rgba(187, 203, 246, 0.78);
+            font-size: 0.86rem;
+            position: relative;
+        }
+        .auth-divider::before,
+        .auth-divider::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            width: 38%;
+            height: 1px;
+            background: rgba(255,255,255,0.12);
+        }
+        .auth-divider::before {
+            left: 0;
+        }
+        .auth-divider::after {
+            right: 0;
         }
         .auth-status {
             font-size: 0.92rem;
@@ -359,19 +397,29 @@
             font-size: 0.85rem;
             color: rgba(156, 179, 230, 0.94);
         }
+        .auth-foot {
+            font-size: 0.88rem;
+            color: rgba(179, 197, 239, 0.92);
+            text-align: center;
+        }
         .small-btn {
-            padding: 0.55rem 0.95rem;
-            border-radius: 10px;
+            padding: 0.8rem 1rem;
+            border-radius: 999px;
             border: 1px solid rgba(255,255,255,0.14);
             background: rgba(255,255,255,0.08);
             color: #fff;
             font-weight: 600;
             cursor: pointer;
+            width: 100%;
         }
         .small-btn.primary {
-            background: linear-gradient(135deg, #22d3ee, #3b82f6);
-            color: #0b1022;
-            border-color: rgba(160, 244, 255, 0.58);
+            background: #f3f4f8;
+            color: #0a132b;
+            border-color: rgba(255, 255, 255, 0.75);
+        }
+        .small-btn.google {
+            background: rgba(255,255,255,0.02);
+            border-color: rgba(255,255,255,0.2);
         }
         @media (max-width: 960px) {
             .span-4, .span-5, .span-7, .span-12 { grid-column: span 12; }
@@ -404,20 +452,20 @@
                 <h2>Connect Accounts</h2>
                 <p>Use LinkedIn login to connect the account that should be used for scheduling and publishing.</p>
                 <div class="auth-card">
+                    <h3 class="auth-title">Welcome back</h3>
                     <div class="auth-status" id="authStatus">Loading secure sign-in...</div>
                     <div class="auth-session" id="authSessionLabel">No active session.</div>
                     <div class="auth-row">
                         <label>Email
                             <input type="email" id="authEmail" placeholder="you@company.com">
                         </label>
-                        <label>Password
-                            <input type="password" id="authPassword" placeholder="At least 6 characters">
-                        </label>
                     </div>
                     <div class="auth-actions">
-                        <button type="button" class="small-btn primary" id="signInBtn">Sign In</button>
-                        <button type="button" class="small-btn" id="signUpBtn">Sign Up</button>
-                        <button type="button" class="small-btn" id="signOutBtn">Sign Out</button>
+                        <button type="button" class="small-btn primary" id="authContinueBtn">Continue</button>
+                        <div class="auth-foot">Use email magic link or your Google account to sign in.</div>
+                        <div class="auth-divider">OR</div>
+                        <button type="button" class="small-btn google" id="authGoogleBtn">Continue with Google</button>
+                        <button type="button" class="small-btn" id="authSignOutBtn" style="display:none;">Sign Out</button>
                     </div>
                 </div>
                 <div class="oauth-card">
@@ -543,10 +591,9 @@
         const authStatus = document.getElementById('authStatus');
         const authSessionLabel = document.getElementById('authSessionLabel');
         const authEmailInput = document.getElementById('authEmail');
-        const authPasswordInput = document.getElementById('authPassword');
-        const signInBtn = document.getElementById('signInBtn');
-        const signUpBtn = document.getElementById('signUpBtn');
-        const signOutBtn = document.getElementById('signOutBtn');
+        const authContinueBtn = document.getElementById('authContinueBtn');
+        const authGoogleBtn = document.getElementById('authGoogleBtn');
+        const authSignOutBtn = document.getElementById('authSignOutBtn');
         const linkedinOAuthStatus = document.getElementById('linkedinOAuthStatus');
         const linkedinLoginBtn = document.getElementById('linkedinLoginBtn');
         const queueEditorModal = document.getElementById('queueEditorModal');
@@ -589,7 +636,7 @@
 
         function setProtectedUiEnabled(isEnabled) {
             scheduleForm.querySelectorAll('input, select, textarea, button').forEach((element) => {
-                if (element === signInBtn || element === signUpBtn || element === signOutBtn) {
+                if (element === authContinueBtn || element === authGoogleBtn || element === authSignOutBtn) {
                     return;
                 }
                 element.disabled = !isEnabled;
@@ -606,7 +653,8 @@
                 ? `Signed in as ${userEmail}`
                 : 'No active session.';
 
-            signOutBtn.disabled = !activeSession;
+            authSignOutBtn.style.display = activeSession ? 'block' : 'none';
+            authSignOutBtn.disabled = !activeSession;
             setProtectedUiEnabled(Boolean(activeSession));
             updateLinkedInLoginHref();
         }
@@ -761,53 +809,43 @@
             }
         }
 
-        async function signInWithPassword() {
+        async function continueWithEmail() {
             const email = String(authEmailInput.value || '').trim();
-            const password = String(authPasswordInput.value || '');
-
-            if (!email || !password) {
-                setAuthStatus('Enter email and password to sign in.', true);
+            if (!email) {
+                setAuthStatus('Enter your email address to continue.', true);
                 return;
             }
 
-            setAuthStatus('Signing in...');
-            const result = await supabaseClient.auth.signInWithPassword({ email, password });
+            setAuthStatus('Sending magic link...');
+            const redirectTo = `${window.location.origin}/publisher.html`;
+            const result = await supabaseClient.auth.signInWithOtp({
+                email,
+                options: {
+                    emailRedirectTo: redirectTo
+                }
+            });
+
             if (result.error) {
-                setAuthStatus(result.error.message || 'Sign in failed.', true);
+                setAuthStatus(result.error.message || 'Failed to send email link.', true);
                 return;
             }
 
-            setSessionState(result.data?.session || null);
-            setAuthStatus('Signed in successfully.');
-            await loadProviderStatus();
-            await refreshOverview();
+            setAuthStatus('Check your inbox for the secure sign-in link.');
         }
 
-        async function signUpWithPassword() {
-            const email = String(authEmailInput.value || '').trim();
-            const password = String(authPasswordInput.value || '');
+        async function continueWithGoogle() {
+            setAuthStatus('Redirecting to Google...');
+            const redirectTo = `${window.location.origin}/publisher.html`;
+            const result = await supabaseClient.auth.signInWithOAuth({
+                provider: 'google',
+                options: {
+                    redirectTo
+                }
+            });
 
-            if (!email || !password || password.length < 6) {
-                setAuthStatus('Use a valid email and a password with at least 6 characters.', true);
-                return;
-            }
-
-            setAuthStatus('Creating account...');
-            const result = await supabaseClient.auth.signUp({ email, password });
             if (result.error) {
-                setAuthStatus(result.error.message || 'Sign up failed.', true);
-                return;
+                setAuthStatus(result.error.message || 'Google sign-in failed.', true);
             }
-
-            if (result.data?.session) {
-                setSessionState(result.data.session);
-                setAuthStatus('Account created and signed in.');
-                await loadProviderStatus();
-                await refreshOverview();
-                return;
-            }
-
-            setAuthStatus('Account created. Check your email confirmation settings, then sign in.');
         }
 
         async function signOut() {
@@ -1186,44 +1224,52 @@
         window.openQueueEditor = openQueueEditor;
         window.copyQueueItem = copyQueueItem;
         schedulePlatformSelect.addEventListener('change', updateAccountOptions);
-        signInBtn.addEventListener('click', async () => {
+        authContinueBtn.addEventListener('click', async () => {
             if (!supabaseClient) {
                 setAuthStatus('Auth is not initialized yet.', true);
                 return;
             }
 
-            signInBtn.disabled = true;
+            authContinueBtn.disabled = true;
             try {
-                await signInWithPassword();
+                await continueWithEmail();
             } catch (error) {
-                setAuthStatus(error.message || 'Sign in failed.', true);
+                setAuthStatus(error.message || 'Email sign-in failed.', true);
             } finally {
-                signInBtn.disabled = false;
+                authContinueBtn.disabled = false;
             }
         });
-        signUpBtn.addEventListener('click', async () => {
+        authGoogleBtn.addEventListener('click', async () => {
             if (!supabaseClient) {
                 setAuthStatus('Auth is not initialized yet.', true);
                 return;
             }
 
-            signUpBtn.disabled = true;
+            authGoogleBtn.disabled = true;
             try {
-                await signUpWithPassword();
+                await continueWithGoogle();
             } catch (error) {
-                setAuthStatus(error.message || 'Sign up failed.', true);
+                setAuthStatus(error.message || 'Google sign-in failed.', true);
             } finally {
-                signUpBtn.disabled = false;
+                authGoogleBtn.disabled = false;
             }
         });
-        signOutBtn.addEventListener('click', async () => {
-            signOutBtn.disabled = true;
+        authEmailInput.addEventListener('keydown', async (event) => {
+            if (event.key !== 'Enter') {
+                return;
+            }
+
+            event.preventDefault();
+            authContinueBtn.click();
+        });
+        authSignOutBtn.addEventListener('click', async () => {
+            authSignOutBtn.disabled = true;
             try {
                 await signOut();
             } catch (error) {
                 setAuthStatus(error.message || 'Sign out failed.', true);
             } finally {
-                signOutBtn.disabled = false;
+                authSignOutBtn.disabled = false;
             }
         });
         queueEditorClose.addEventListener('click', closeQueueEditor);
