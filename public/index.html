@@ -2435,8 +2435,8 @@
                 <span class="logo-text">craft ai</span>
             </div>
             <div class="nav-actions">
-                <a href="auth.html" class="download-btn" style="text-decoration: none;">
-                    Sign In
+                <a href="generator.html?platform=linkedin" class="download-btn" style="text-decoration: none;">
+                    Generator
                 </a>
                 <a href="publisher.html" class="download-btn" style="text-decoration: none;">
                     Publishing Hub
@@ -2447,14 +2447,15 @@
 
     <!-- Main content -->
     <main class="main">
-        <p class="subtitle">A new social content generator from PostCraft</p>
+        <p class="subtitle" id="welcomeSubtitle" style="display:none;"></p>
+        <p class="subtitle">A new social content generator from zylense.ai</p>
         <h1 class="main-title">
             The content creator that works <span class="highlight">for you</span>
         </h1>
 
         <div class="platform-buttons">
-            <a href="auth.html" class="cta-button" style="text-decoration: none; display: inline-flex;">
-                <span>&darr;</span> Sign In First
+            <a href="generator.html?platform=linkedin" class="cta-button" style="text-decoration: none; display: inline-flex;">
+                <span>&darr;</span> Open Generator
             </a>
         </div>
 
@@ -2638,9 +2639,16 @@
             const urlParams = new URLSearchParams(window.location.search);
             const introSeenInSession = sessionStorage.getItem('postcraftIntroSeen') === '1';
             const hasAuthSessionMarker = localStorage.getItem('postcraftSignedIn') === '1';
+            const signedInUserName = String(localStorage.getItem('postcraftUserName') || '').trim();
             const shouldSkipIntro = urlParams.get('skipIntro') === '1' || introSeenInSession;
             const introPage = document.getElementById('introPage');
             const mainContent = document.getElementById('mainContent');
+            const welcomeSubtitle = document.getElementById('welcomeSubtitle');
+
+            if (welcomeSubtitle && hasAuthSessionMarker && signedInUserName) {
+                welcomeSubtitle.textContent = `Welcome, ${signedInUserName}`;
+                welcomeSubtitle.style.display = 'block';
+            }
 
             if (shouldSkipIntro) {
                 if (!hasAuthSessionMarker) {
@@ -2662,9 +2670,19 @@
                 animatePercentage();
             }, 5500);
             
-            // After intro, route to dedicated auth screen before home.
+            // After intro, route based on session state.
             setTimeout(() => {
                 sessionStorage.setItem('postcraftIntroSeen', '1');
+                if (hasAuthSessionMarker) {
+                    if (mainContent) {
+                        mainContent.style.display = 'block';
+                    }
+                    if (introPage) {
+                        introPage.style.display = 'none';
+                    }
+                    return;
+                }
+
                 window.location.href = '/auth.html';
             }, 7500);
         });
