@@ -2435,7 +2435,7 @@
                 <span class="logo-text">craft ai</span>
             </div>
             <div class="nav-actions">
-                <a href="publisher.html" class="download-btn" style="text-decoration: none;">
+                <a href="auth.html" class="download-btn" style="text-decoration: none;">
                     Sign In
                 </a>
                 <a href="publisher.html" class="download-btn" style="text-decoration: none;">
@@ -2453,8 +2453,8 @@
         </h1>
 
         <div class="platform-buttons">
-            <a href="publisher.html" class="cta-button" style="text-decoration: none; display: inline-flex;">
-                <span>&darr;</span> Sign In & Connect LinkedIn
+            <a href="auth.html" class="cta-button" style="text-decoration: none; display: inline-flex;">
+                <span>&darr;</span> Sign In First
             </a>
         </div>
 
@@ -2656,11 +2656,10 @@
                 animatePercentage();
             }, 5500);
             
-            // Show main content after spectacular intro
+            // After intro, route to dedicated auth screen before home.
             setTimeout(() => {
-                document.getElementById('mainContent').style.display = 'block';
-                document.getElementById('introPage').style.display = 'none';
                 sessionStorage.setItem('postcraftIntroSeen', '1');
+                window.location.href = '/auth.html';
             }, 7500);
         });
 
@@ -3752,5 +3751,6 @@
 </body>
 
 </html>
+
 
 

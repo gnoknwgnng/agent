@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PostCraft AI - Sign In</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            min-height: 100vh;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: radial-gradient(circle at 15% 15%, rgba(67, 56, 202, 0.26), transparent 45%),
+                        radial-gradient(circle at 85% 20%, rgba(59, 130, 246, 0.2), transparent 45%),
+                        #12141c;
+            color: #eef2ff;
+            display: grid;
+            place-items: center;
+            padding: 1.25rem;
+        }
+
+        .shell {
+            width: 100%;
+            max-width: 480px;
+            border: 1px solid rgba(115, 138, 214, 0.34);
+            border-radius: 24px;
+            background: rgba(14, 18, 35, 0.9);
+            padding: 2rem 1.5rem;
+            box-shadow: 0 28px 70px rgba(0, 0, 0, 0.45);
+        }
+
+        h1 {
+            font-size: 2.1rem;
+            margin-bottom: 0.95rem;
+            letter-spacing: -0.02em;
+        }
+
+        .status {
+            color: #b9c8ff;
+            margin-bottom: 0.6rem;
+            min-height: 1.35rem;
+        }
+
+        .session {
+            color: #90a6eb;
+            margin-bottom: 1rem;
+            font-size: 0.95rem;
+            min-height: 1.25rem;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: #9fb2ef;
+        }
+
+        input {
+            width: 100%;
+            border-radius: 999px;
+            border: 1px solid rgba(118, 145, 255, 0.72);
+            background: rgba(11, 17, 38, 0.88);
+            color: #eef4ff;
+            padding: 0.95rem 1rem;
+            outline: none;
+            margin-bottom: 0.85rem;
+        }
+
+        input:focus {
+            box-shadow: 0 0 0 3px rgba(95, 132, 255, 0.24);
+        }
+
+        .btn {
+            width: 100%;
+            border-radius: 999px;
+            border: 1px solid rgba(255, 255, 255, 0.16);
+            background: rgba(255, 255, 255, 0.04);
+            color: #fff;
+            padding: 0.82rem 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 0.55rem;
+        }
+
+        .btn.primary {
+            background: #f3f4f8;
+            color: #0a132b;
+            border-color: rgba(255, 255, 255, 0.8);
+        }
+
+        .divider {
+            text-align: center;
+            color: rgba(187, 203, 246, 0.78);
+            font-size: 0.86rem;
+            position: relative;
+            margin: 0.9rem 0;
+        }
+
+        .divider::before,
+        .divider::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            width: 38%;
+            height: 1px;
+            background: rgba(255,255,255,0.12);
+        }
+
+        .divider::before { left: 0; }
+        .divider::after { right: 0; }
+
+        .note {
+            margin-top: 0.8rem;
+            color: #9cb0e8;
+            text-align: center;
+            font-size: 0.93rem;
+        }
+
+        .links {
+            margin-top: 1rem;
+            display: grid;
+            gap: 0.45rem;
+        }
+
+        .link {
+            color: #9fc0ff;
+            text-decoration: none;
+            text-align: center;
+            font-size: 0.92rem;
+        }
+    </style>
+</head>
+<body>
+    <main class="shell">
+        <h1>Welcome back</h1>
+        <div class="status" id="authStatus">Loading secure sign-in...</div>
+        <div class="session" id="authSessionLabel">No active session.</div>
+
+        <label for="authEmail">Email address</label>
+        <input type="email" id="authEmail" placeholder="you@company.com">
+
+        <button class="btn primary" id="authContinueBtn" type="button">Continue</button>
+        <div class="divider">OR</div>
+        <button class="btn" id="authGoogleBtn" type="button">Continue with Google</button>
+        <button class="btn" id="authHomeBtn" type="button" style="display:none;">Continue to Home</button>
+        <button class="btn" id="authPublisherBtn" type="button" style="display:none;">Open Publishing Hub</button>
+        <button class="btn" id="authSignOutBtn" type="button" style="display:none;">Sign Out</button>
+
+        <p class="note">Sign in before using PostCraft features.</p>
+
+        <div class="links">
+            <a class="link" href="/index.html?skipIntro=1">Skip to Home</a>
+        </div>
+    </main>
+
+    <script>
+        const apiEndpoints = {
+            authConfig: '/.netlify/functions/auth-config'
+        };
+
+        const authStatus = document.getElementById('authStatus');
+        const authSessionLabel = document.getElementById('authSessionLabel');
+        const authEmailInput = document.getElementById('authEmail');
+        const authContinueBtn = document.getElementById('authContinueBtn');
+        const authGoogleBtn = document.getElementById('authGoogleBtn');
+        const authHomeBtn = document.getElementById('authHomeBtn');
+        const authPublisherBtn = document.getElementById('authPublisherBtn');
+        const authSignOutBtn = document.getElementById('authSignOutBtn');
+
+        let supabaseClient = null;
+        let activeSession = null;
+
+        function setAuthStatus(message, isError = false) {
+            authStatus.textContent = message;
+            authStatus.style.color = isError ? '#fecaca' : '#b9c8ff';
+        }
+
+        function setSessionState(session) {
+            activeSession = session || null;
+            const userEmail = activeSession?.user?.email || '';
+            authSessionLabel.textContent = userEmail ? `Signed in as ${userEmail}` : 'No active session.';
+
+            const signedIn = Boolean(activeSession);
+            authHomeBtn.style.display = signedIn ? 'block' : 'none';
+            authPublisherBtn.style.display = signedIn ? 'block' : 'none';
+            authSignOutBtn.style.display = signedIn ? 'block' : 'none';
+        }
+
+        async function readJsonResponse(response) {
+            const raw = await response.text();
+            try {
+                return JSON.parse(raw);
+            } catch (error) {
+                throw new Error('Invalid auth config response.');
+            }
+        }
+
+        async function initSupabaseAuth() {
+            try {
+                const response = await fetch(apiEndpoints.authConfig);
+                const config = await readJsonResponse(response);
+
+                if (!config.success || !config.supabaseUrl || !config.supabaseAnonKey) {
+                    throw new Error(config.error || 'Supabase Auth is not configured.');
+                }
+
+                if (!window.supabase?.createClient) {
+                    throw new Error('Supabase client library failed to load.');
+                }
+
+                supabaseClient = window.supabase.createClient(config.supabaseUrl, config.supabaseAnonKey, {
+                    auth: {
+                        persistSession: true,
+                        autoRefreshToken: true,
+                        detectSessionInUrl: true
+                    }
+                });
+
+                const sessionResult = await supabaseClient.auth.getSession();
+                setSessionState(sessionResult.data?.session || null);
+
+                supabaseClient.auth.onAuthStateChange((_event, session) => {
+                    setSessionState(session || null);
+                    if (session) {
+                        setAuthStatus('Signed in successfully. Continue to Home.');
+                    }
+                });
+
+                setAuthStatus(activeSession ? 'Session ready. Continue to Home.' : 'Sign in to continue to PostCraft.');
+            } catch (error) {
+                setSessionState(null);
+                setAuthStatus(error.message || 'Failed to initialize auth.', true);
+            }
+        }
+
+        async function continueWithEmail() {
+            const email = String(authEmailInput.value || '').trim();
+            if (!email) {
+                setAuthStatus('Enter your email address to continue.', true);
+                return;
+            }
+
+            setAuthStatus('Sending magic link...');
+            const redirectTo = `${window.location.origin}/auth.html`;
+            const result = await supabaseClient.auth.signInWithOtp({
+                email,
+                options: {
+                    emailRedirectTo: redirectTo
+                }
+            });
+
+            if (result.error) {
+                setAuthStatus(result.error.message || 'Failed to send email link.', true);
+                return;
+            }
+
+            setAuthStatus('Check your inbox for the sign-in link.');
+        }
+
+        async function continueWithGoogle() {
+            setAuthStatus('Redirecting to Google...');
+            const redirectTo = `${window.location.origin}/auth.html`;
+            const result = await supabaseClient.auth.signInWithOAuth({
+                provider: 'google',
+                options: {
+                    redirectTo
+                }
+            });
+
+            if (result.error) {
+                setAuthStatus(result.error.message || 'Google sign-in failed.', true);
+            }
+        }
+
+        async function signOut() {
+            if (!supabaseClient) {
+                return;
+            }
+
+            await supabaseClient.auth.signOut();
+            setSessionState(null);
+            setAuthStatus('Signed out.');
+        }
+
+        authContinueBtn.addEventListener('click', async () => {
+            if (!supabaseClient) {
+                setAuthStatus('Auth is not initialized yet.', true);
+                return;
+            }
+
+            authContinueBtn.disabled = true;
+            try {
+                await continueWithEmail();
+            } catch (error) {
+                setAuthStatus(error.message || 'Email sign-in failed.', true);
+            } finally {
+                authContinueBtn.disabled = false;
+            }
+        });
+
+        authGoogleBtn.addEventListener('click', async () => {
+            if (!supabaseClient) {
+                setAuthStatus('Auth is not initialized yet.', true);
+                return;
+            }
+
+            authGoogleBtn.disabled = true;
+            try {
+                await continueWithGoogle();
+            } catch (error) {
+                setAuthStatus(error.message || 'Google sign-in failed.', true);
+            } finally {
+                authGoogleBtn.disabled = false;
+            }
+        });
+
+        authSignOutBtn.addEventListener('click', async () => {
+            authSignOutBtn.disabled = true;
+            try {
+                await signOut();
+            } catch (error) {
+                setAuthStatus(error.message || 'Sign out failed.', true);
+            } finally {
+                authSignOutBtn.disabled = false;
+            }
+        });
+
+        authHomeBtn.addEventListener('click', () => {
+            sessionStorage.setItem('postcraftIntroSeen', '1');
+            window.location.href = '/index.html?skipIntro=1';
+        });
+
+        authPublisherBtn.addEventListener('click', () => {
+            window.location.href = '/publisher.html';
+        });
+
+        authEmailInput.addEventListener('keydown', (event) => {
+            if (event.key !== 'Enter') {
+                return;
+            }
+
+            event.preventDefault();
+            authContinueBtn.click();
+        });
+
+        initSupabaseAuth();
+    </script>
+</body>
+</html>
