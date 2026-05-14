@@ -120,18 +120,6 @@
             font-size: 0.93rem;
         }
 
-        .links {
-            margin-top: 1rem;
-            display: grid;
-            gap: 0.45rem;
-        }
-
-        .link {
-            color: #9fc0ff;
-            text-decoration: none;
-            text-align: center;
-            font-size: 0.92rem;
-        }
     </style>
 </head>
 <body>
@@ -151,16 +139,16 @@
         <button class="btn" id="authSignOutBtn" type="button" style="display:none;">Sign Out</button>
 
         <p class="note">Sign in before using PostCraft features.</p>
-
-        <div class="links">
-            <a class="link" href="/index.html?skipIntro=1">Skip to Home</a>
-        </div>
     </main>
 
     <script>
         const apiEndpoints = {
             authConfig: '/.netlify/functions/auth-config'
         };
+        const urlParams = new URLSearchParams(window.location.search);
+        const requestedNext = String(urlParams.get('next') || '').trim();
+        const safeNextPath = requestedNext.startsWith('/') ? requestedNext : '/index.html?skipIntro=1';
+        const oauthError = urlParams.get('error_description') || urlParams.get('error');
 
         const authStatus = document.getElementById('authStatus');
         const authSessionLabel = document.getElementById('authSessionLabel');
@@ -188,6 +176,12 @@
             authHomeBtn.style.display = signedIn ? 'block' : 'none';
             authPublisherBtn.style.display = signedIn ? 'block' : 'none';
             authSignOutBtn.style.display = signedIn ? 'block' : 'none';
+
+            if (signedIn) {
+                localStorage.setItem('postcraftSignedIn', '1');
+            } else {
+                localStorage.removeItem('postcraftSignedIn');
+            }
         }
 
         async function readJsonResponse(response) {
@@ -230,7 +224,11 @@
                     }
                 });
 
-                setAuthStatus(activeSession ? 'Session ready. Continue to Home.' : 'Sign in to continue to PostCraft.');
+                if (oauthError) {
+                    setAuthStatus(decodeURIComponent(oauthError), true);
+                } else {
+                    setAuthStatus(activeSession ? 'Session ready. Continue to Home.' : 'Sign in to continue to PostCraft.');
+                }
             } catch (error) {
                 setSessionState(null);
                 setAuthStatus(error.message || 'Failed to initialize auth.', true);
@@ -283,6 +281,7 @@
 
             await supabaseClient.auth.signOut();
             setSessionState(null);
+            localStorage.removeItem('postcraftSignedIn');
             setAuthStatus('Signed out.');
         }
 
@@ -331,7 +330,7 @@
 
         authHomeBtn.addEventListener('click', () => {
             sessionStorage.setItem('postcraftIntroSeen', '1');
-            window.location.href = '/index.html?skipIntro=1';
+            window.location.href = safeNextPath;
         });
 
         authPublisherBtn.addEventListener('click', () => {

@@ -2637,11 +2637,17 @@
         document.addEventListener('DOMContentLoaded', function() {
             const urlParams = new URLSearchParams(window.location.search);
             const introSeenInSession = sessionStorage.getItem('postcraftIntroSeen') === '1';
+            const hasAuthSessionMarker = localStorage.getItem('postcraftSignedIn') === '1';
             const shouldSkipIntro = urlParams.get('skipIntro') === '1' || introSeenInSession;
             const introPage = document.getElementById('introPage');
             const mainContent = document.getElementById('mainContent');
 
             if (shouldSkipIntro) {
+                if (!hasAuthSessionMarker) {
+                    window.location.href = '/auth.html?next=/index.html?skipIntro=1';
+                    return;
+                }
+
                 if (introPage) {
                     introPage.style.display = 'none';
                 }

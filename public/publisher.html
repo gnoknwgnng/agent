@@ -452,19 +452,11 @@
                 <h2>Connect Accounts</h2>
                 <p>Use LinkedIn login to connect the account that should be used for scheduling and publishing.</p>
                 <div class="auth-card">
-                    <h3 class="auth-title">Welcome back</h3>
-                    <div class="auth-status" id="authStatus">Loading secure sign-in...</div>
+                    <h3 class="auth-title">Session Required</h3>
+                    <div class="auth-status" id="authStatus">Checking active session...</div>
                     <div class="auth-session" id="authSessionLabel">No active session.</div>
-                    <div class="auth-row">
-                        <label>Email
-                            <input type="email" id="authEmail" placeholder="you@company.com">
-                        </label>
-                    </div>
                     <div class="auth-actions">
-                        <button type="button" class="small-btn primary" id="authContinueBtn">Continue</button>
-                        <div class="auth-foot">Use email magic link or your Google account to sign in.</div>
-                        <div class="auth-divider">OR</div>
-                        <button type="button" class="small-btn google" id="authGoogleBtn">Continue with Google</button>
+                        <a class="small-btn" id="authBackToLogin" href="/auth.html?next=/publisher.html">Go To Sign In</a>
                         <button type="button" class="small-btn" id="authSignOutBtn" style="display:none;">Sign Out</button>
                     </div>
                 </div>
@@ -590,9 +582,7 @@
         const oauthBanner = document.getElementById('oauthBanner');
         const authStatus = document.getElementById('authStatus');
         const authSessionLabel = document.getElementById('authSessionLabel');
-        const authEmailInput = document.getElementById('authEmail');
-        const authContinueBtn = document.getElementById('authContinueBtn');
-        const authGoogleBtn = document.getElementById('authGoogleBtn');
+        const authBackToLogin = document.getElementById('authBackToLogin');
         const authSignOutBtn = document.getElementById('authSignOutBtn');
         const linkedinOAuthStatus = document.getElementById('linkedinOAuthStatus');
         const linkedinLoginBtn = document.getElementById('linkedinLoginBtn');
@@ -636,7 +626,7 @@
 
         function setProtectedUiEnabled(isEnabled) {
             scheduleForm.querySelectorAll('input, select, textarea, button').forEach((element) => {
-                if (element === authContinueBtn || element === authGoogleBtn || element === authSignOutBtn) {
+                if (element === authSignOutBtn) {
                     return;
                 }
                 element.disabled = !isEnabled;
@@ -655,6 +645,7 @@
 
             authSignOutBtn.style.display = activeSession ? 'block' : 'none';
             authSignOutBtn.disabled = !activeSession;
+            authBackToLogin.style.display = activeSession ? 'none' : 'block';
             setProtectedUiEnabled(Boolean(activeSession));
             updateLinkedInLoginHref();
         }
@@ -800,51 +791,26 @@
 
                 supabaseClient.auth.onAuthStateChange((_event, session) => {
                     setSessionState(session || null);
+                    if (!session) {
+                        setAuthStatus('Session expired. Redirecting to sign in...', true);
+                        window.location.href = '/auth.html?next=/publisher.html';
+                        return;
+                    }
+
+                    localStorage.setItem('postcraftSignedIn', '1');
                 });
 
-                setAuthStatus(activeSession ? 'Signed in. Publishing data is private to this account.' : 'Sign in to access private publishing data.');
+                if (!activeSession) {
+                    setAuthStatus('Sign in required. Redirecting...', true);
+                    window.location.href = '/auth.html?next=/publisher.html';
+                    return;
+                }
+
+                localStorage.setItem('postcraftSignedIn', '1');
+                setAuthStatus('Signed in. Publishing data is private to this account.');
             } catch (error) {
                 setSessionState(null);
                 setAuthStatus(error.message || 'Failed to initialize auth.', true);
-            }
-        }
-
-        async function continueWithEmail() {
-            const email = String(authEmailInput.value || '').trim();
-            if (!email) {
-                setAuthStatus('Enter your email address to continue.', true);
-                return;
-            }
-
-            setAuthStatus('Sending magic link...');
-            const redirectTo = `${window.location.origin}/publisher.html`;
-            const result = await supabaseClient.auth.signInWithOtp({
-                email,
-                options: {
-                    emailRedirectTo: redirectTo
-                }
-            });
-
-            if (result.error) {
-                setAuthStatus(result.error.message || 'Failed to send email link.', true);
-                return;
-            }
-
-            setAuthStatus('Check your inbox for the secure sign-in link.');
-        }
-
-        async function continueWithGoogle() {
-            setAuthStatus('Redirecting to Google...');
-            const redirectTo = `${window.location.origin}/publisher.html`;
-            const result = await supabaseClient.auth.signInWithOAuth({
-                provider: 'google',
-                options: {
-                    redirectTo
-                }
-            });
-
-            if (result.error) {
-                setAuthStatus(result.error.message || 'Google sign-in failed.', true);
             }
         }
 
@@ -854,6 +820,7 @@
             }
 
             await supabaseClient.auth.signOut();
+            localStorage.removeItem('postcraftSignedIn');
             setSessionState(null);
             allAccounts = [];
             currentQueue = [];
@@ -1224,44 +1191,6 @@
         window.openQueueEditor = openQueueEditor;
         window.copyQueueItem = copyQueueItem;
         schedulePlatformSelect.addEventListener('change', updateAccountOptions);
-        authContinueBtn.addEventListener('click', async () => {
-            if (!supabaseClient) {
-                setAuthStatus('Auth is not initialized yet.', true);
-                return;
-            }
-
-            authContinueBtn.disabled = true;
-            try {
-                await continueWithEmail();
-            } catch (error) {
-                setAuthStatus(error.message || 'Email sign-in failed.', true);
-            } finally {
-                authContinueBtn.disabled = false;
-            }
-        });
-        authGoogleBtn.addEventListener('click', async () => {
-            if (!supabaseClient) {
-                setAuthStatus('Auth is not initialized yet.', true);
-                return;
-            }
-
-            authGoogleBtn.disabled = true;
-            try {
-                await continueWithGoogle();
-            } catch (error) {
-                setAuthStatus(error.message || 'Google sign-in failed.', true);
-            } finally {
-                authGoogleBtn.disabled = false;
-            }
-        });
-        authEmailInput.addEventListener('keydown', async (event) => {
-            if (event.key !== 'Enter') {
-                return;
-            }
-
-            event.preventDefault();
-            authContinueBtn.click();
-        });
         authSignOutBtn.addEventListener('click', async () => {
             authSignOutBtn.disabled = true;
             try {
