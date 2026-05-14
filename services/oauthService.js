@@ -69,11 +69,13 @@ function signStatePayload(encodedPayload, config) {
         .digest('base64url');
 }
 
-function createOAuthStateToken(config) {
+function createOAuthStateToken(config, metadata = {}) {
     const payload = {
         provider: 'linkedin',
         nonce: crypto.randomBytes(24).toString('hex'),
-        issuedAt: Date.now()
+        issuedAt: Date.now(),
+        userId: String(metadata.userId || '').trim() || null,
+        returnTo: String(metadata.returnTo || '').trim() || '/publisher.html'
     };
     const encodedPayload = toBase64Url(JSON.stringify(payload));
     const signature = signStatePayload(encodedPayload, config);
@@ -82,29 +84,34 @@ function createOAuthStateToken(config) {
 
 function verifyOAuthStateToken(stateToken, config) {
     if (!stateToken || !stateToken.includes('.')) {
-        return false;
+        return null;
     }
 
     const [encodedPayload, signature] = stateToken.split('.');
     const expectedSignature = signStatePayload(encodedPayload, config);
 
     if (signature.length !== expectedSignature.length) {
-        return false;
+        return null;
     }
 
     if (!crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(expectedSignature))) {
-        return false;
+        return null;
     }
 
     try {
         const payload = JSON.parse(Buffer.from(encodedPayload, 'base64url').toString('utf8'));
         if (payload.provider !== 'linkedin') {
-            return false;
+            return null;
         }
 
-        return Date.now() - Number(payload.issuedAt || 0) <= (10 * 60 * 1000);
+        const isFresh = Date.now() - Number(payload.issuedAt || 0) <= (10 * 60 * 1000);
+        if (!isFresh) {
+            return null;
+        }
+
+        return payload;
     } catch (error) {
-        return false;
+        return null;
     }
 }
 
@@ -122,15 +129,20 @@ async function fetchLinkedInUserInfo(accessToken) {
     }
 }
 
-async function upsertLinkedInOAuthAccount({ accessToken, expiresIn, profile }) {
+async function upsertLinkedInOAuthAccount({ accessToken, expiresIn, profile, userContext }) {
     const memberId = profile.sub || '';
     const authorUrn = memberId ? `urn:li:person:${memberId}` : '';
+    const userId = String(userContext?.userId || '').trim();
+
+    if (!userId) {
+        throw new Error('A valid authenticated user is required before connecting LinkedIn.');
+    }
 
     if (!authorUrn) {
         throw new Error('LinkedIn login succeeded but the profile did not include a member ID.');
     }
 
-    const state = await readState();
+    const state = await readState({ userId });
     const now = new Date().toISOString();
     const displayName = profile.name || [profile.given_name, profile.family_name].filter(Boolean).join(' ') || 'LinkedIn User';
     const tokenExpiresAt = expiresIn ? new Date(Date.now() + (Number(expiresIn) * 1000)).toISOString() : '';
@@ -144,6 +156,7 @@ async function upsertLinkedInOAuthAccount({ accessToken, expiresIn, profile }) {
 
     const account = {
         id: existingAccount?.id || createId('account'),
+        userId,
         platform: 'linkedin',
         displayName,
         accessToken,
@@ -158,7 +171,7 @@ async function upsertLinkedInOAuthAccount({ accessToken, expiresIn, profile }) {
         tokenExpiresAt
     };
 
-    await saveAccount(account);
+    await saveAccount(account, { userId });
     return account;
 }
 

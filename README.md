@@ -56,6 +56,9 @@ npm install
 Create a `.env` file with your Groq API key:
 ```env
 GROQ_API_KEY=your_groq_api_key_here
+SUPABASE_URL=https://your-project.supabase.co
+SUPABASE_ANON_KEY=your-supabase-anon-key
+SUPABASE_SERVICE_ROLE_KEY=your-supabase-service-role-key
 ```
 
 ### 3. Run the Application

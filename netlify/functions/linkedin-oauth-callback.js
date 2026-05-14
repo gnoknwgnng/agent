@@ -7,8 +7,9 @@ const {
 } = require('../../services/oauthService');
 const { redirect, handleOptions, methodNotAllowed } = require('./_lib/http');
 
-function buildPublisherRedirect(siteUrl, params) {
-    const redirectUrl = new URL('/publisher.html', siteUrl);
+function buildPublisherRedirect(siteUrl, params, returnTo = '/publisher.html') {
+    const safePath = String(returnTo || '/publisher.html').startsWith('/') ? String(returnTo) : '/publisher.html';
+    const redirectUrl = new URL(safePath, siteUrl);
     Object.entries(params).forEach(([key, value]) => {
         if (value) {
             redirectUrl.searchParams.set(key, value);
@@ -30,16 +31,18 @@ exports.handler = async (event) => {
     const config = getLinkedInOAuthConfig({ headers: event.headers || {} });
     const params = event.queryStringParameters || {};
     const { code, state, error, error_description: errorDescription } = params;
+    const verifiedState = verifyOAuthStateToken(state, config);
+    const returnTo = verifiedState?.returnTo || '/publisher.html';
 
     if (error) {
         return redirect(buildPublisherRedirect(config.siteUrl, {
             linkedin: error,
             message: errorDescription || 'LinkedIn authorization failed'
-        }));
+        }, returnTo));
     }
 
-    if (!code || !verifyOAuthStateToken(state, config)) {
-        return redirect(buildPublisherRedirect(config.siteUrl, { linkedin: 'invalid_state' }));
+    if (!code || !verifiedState?.userId) {
+        return redirect(buildPublisherRedirect(config.siteUrl, { linkedin: 'invalid_state' }, returnTo));
     }
 
     try {
@@ -71,10 +74,13 @@ exports.handler = async (event) => {
         await upsertLinkedInOAuthAccount({
             accessToken,
             expiresIn,
-            profile
+            profile,
+            userContext: {
+                userId: verifiedState.userId
+            }
         });
 
-        return redirect(buildPublisherRedirect(config.siteUrl, { linkedin: 'connected' }));
+        return redirect(buildPublisherRedirect(config.siteUrl, { linkedin: 'connected' }, returnTo));
     } catch (callbackError) {
         const errorMessage = callbackError.response?.data?.error_description ||
             callbackError.response?.data?.error ||
@@ -83,6 +89,6 @@ exports.handler = async (event) => {
         return redirect(buildPublisherRedirect(config.siteUrl, {
             linkedin: 'failed',
             message: errorMessage
-        }));
+        }, returnTo));
     }
 };

@@ -1,7 +1,7 @@
 const baseHeaders = {
     'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Headers': 'Content-Type',
-    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS'
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+    'Access-Control-Allow-Methods': 'GET, POST, PATCH, OPTIONS'
 };
 
 function buildHeaders(extraHeaders = {}) {
@@ -63,6 +63,10 @@ function badRequest(message) {
     return json(400, { success: false, error: message });
 }
 
+function unauthorized(message = 'Unauthorized') {
+    return json(401, { success: false, error: message });
+}
+
 function parseJsonBody(event) {
     try {
         return JSON.parse(event.body || '{}');
@@ -80,5 +84,6 @@ module.exports = {
     handleOptions,
     methodNotAllowed,
     badRequest,
+    unauthorized,
     parseJsonBody
 };

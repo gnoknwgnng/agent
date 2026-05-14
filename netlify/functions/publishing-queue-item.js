@@ -1,5 +1,6 @@
 const { updateLinkedInQueueItem } = require('../../services/publishingApi');
 const { json, handleOptions, methodNotAllowed, badRequest, parseJsonBody } = require('./_lib/http');
+const { requireAuthenticatedUser, getUserContext } = require('./_lib/auth');
 
 exports.handler = async (event) => {
     const optionsResponse = handleOptions(event);
@@ -17,15 +18,16 @@ exports.handler = async (event) => {
     }
 
     try {
+        const user = await requireAuthenticatedUser(event);
         const payload = parseJsonBody(event);
-        const item = await updateLinkedInQueueItem(queueItemId, payload);
+        const item = await updateLinkedInQueueItem(queueItemId, payload, getUserContext(user));
         return json(200, { success: true, item });
     } catch (error) {
         const statusCode = error.statusCode || 500;
         return json(statusCode, {
             success: false,
-            error: 'Failed to update queue item',
-            details: error.message
+            error: statusCode === 401 ? error.message : 'Failed to update queue item',
+            details: statusCode === 401 ? undefined : error.message
         });
     }
 };

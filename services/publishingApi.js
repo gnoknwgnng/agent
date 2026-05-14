@@ -38,31 +38,47 @@ function normalizeServicesInput(services) {
         .filter(Boolean);
 }
 
-async function getLinkedInOverview() {
-    const state = await readState();
+function requireUserContext(userContext = {}) {
+    const userId = String(userContext.userId || '').trim();
+    if (!userId) {
+        const error = new Error('Authentication required. Please sign in first.');
+        error.statusCode = 401;
+        throw error;
+    }
+
+    return { userId, userEmail: String(userContext.userEmail || '').trim() };
+}
+
+async function getLinkedInOverview(userContext = {}) {
+    const context = requireUserContext(userContext);
+    const state = await readState(context);
     const linkedInState = filterLinkedInState(state);
-    await hydratePendingQueueItems(linkedInState.queue, linkedInState.schedules);
+    await hydratePendingQueueItems(linkedInState.queue, linkedInState.schedules, context);
     return linkedInState;
 }
 
-async function getLinkedInAccounts() {
-    const state = await readState();
+async function getLinkedInAccounts(userContext = {}) {
+    const context = requireUserContext(userContext);
+    const state = await readState(context);
     return filterLinkedInState(state).accounts;
 }
 
-async function getLinkedInSchedules() {
-    const state = await readState();
+async function getLinkedInSchedules(userContext = {}) {
+    const context = requireUserContext(userContext);
+    const state = await readState(context);
     return filterLinkedInState(state).schedules;
 }
 
-async function getLinkedInQueue() {
-    const state = await readState();
+async function getLinkedInQueue(userContext = {}) {
+    const context = requireUserContext(userContext);
+    const state = await readState(context);
     const linkedInState = filterLinkedInState(state);
-    await hydratePendingQueueItems(linkedInState.queue, linkedInState.schedules);
+    await hydratePendingQueueItems(linkedInState.queue, linkedInState.schedules, context);
     return linkedInState.queue;
 }
 
-async function createManualLinkedInAccount(payload) {
+async function createManualLinkedInAccount(payload, userContext = {}) {
+    const context = requireUserContext(userContext);
     const {
         platform,
         displayName,
@@ -80,6 +96,7 @@ async function createManualLinkedInAccount(payload) {
 
     const account = {
         id: createId('account'),
+        userId: context.userId,
         platform,
         displayName,
         accessToken,
@@ -89,7 +106,7 @@ async function createManualLinkedInAccount(payload) {
         status: 'connected'
     };
 
-    await saveAccount(account);
+    await saveAccount(account, context);
     return account;
 }
 
@@ -104,7 +121,8 @@ function getLinkedInProviderStatus(options = {}) {
     };
 }
 
-async function createLinkedInSchedule(payload) {
+async function createLinkedInSchedule(payload, userContext = {}) {
+    const context = requireUserContext(userContext);
     const {
         platform,
         accountId,
@@ -143,11 +161,12 @@ async function createLinkedInSchedule(payload) {
         preferredHour: Number(preferredHour || 10),
         startDate: startDate ? new Date(startDate) : new Date(),
         endDate: endDate ? new Date(endDate) : undefined
-    });
+    }, context);
 }
 
-async function publishLinkedInQueueItem(queueItemId) {
-    const state = await readState();
+async function publishLinkedInQueueItem(queueItemId, userContext = {}) {
+    const context = requireUserContext(userContext);
+    const state = await readState(context);
     const existingItem = state.queue.find((item) => item.id === queueItemId);
     if (!existingItem) {
         const error = new Error('Queue item not found');
@@ -161,11 +180,12 @@ async function publishLinkedInQueueItem(queueItemId) {
         throw error;
     }
 
-    return publishQueueItem(queueItemId);
+    return publishQueueItem(queueItemId, context);
 }
 
-async function updateLinkedInQueueItem(queueItemId, payload) {
-    const state = await readState();
+async function updateLinkedInQueueItem(queueItemId, payload, userContext = {}) {
+    const context = requireUserContext(userContext);
+    const state = await readState(context);
     const existingItem = state.queue.find((item) => item.id === queueItemId);
     if (!existingItem) {
         const error = new Error('Queue item not found');
@@ -204,13 +224,13 @@ async function updateLinkedInQueueItem(queueItemId, payload) {
         content: updatedItem.content,
         metadata: updatedItem.metadata,
         updatedAt: updatedItem.updatedAt
-    });
+    }, context);
 
     return updatedItem;
 }
 
 async function runScheduledQueuePublish(options = {}) {
-    return publishDueQueueItems(options);
+    return publishDueQueueItems(options, { scope: 'all' });
 }
 
 module.exports = {

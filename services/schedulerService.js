@@ -30,10 +30,6 @@ function addDays(date, days) {
     return d;
 }
 
-function formatDate(date) {
-    return new Date(date).toISOString().split('T')[0];
-}
-
 async function createGeneratorForSchedule(schedule) {
     const generator = new LinkedInPostGenerator();
     generator.setPlatform(schedule.platform);
@@ -162,6 +158,7 @@ async function generateQueueItemsForSchedule(schedule) {
 
         queueItems.push({
             id: createId('queue'),
+            userId: schedule.userId,
             scheduleId: schedule.id,
             accountId: schedule.accountId,
             platform: schedule.platform,
@@ -203,7 +200,7 @@ async function generateContentForQueueItem(queueItem, schedule) {
     return queueItem;
 }
 
-async function hydratePendingQueueItems(queueItems, schedules) {
+async function hydratePendingQueueItems(queueItems, schedules, context = {}) {
     const pendingItems = (queueItems || []).filter((item) =>
         item.platform === 'linkedin' && needsQueueContent(item)
     );
@@ -251,19 +248,26 @@ async function hydratePendingQueueItems(queueItems, schedules) {
                 ...generated.metadata
             };
             item.updatedAt = new Date().toISOString();
-            await saveQueueItem(item);
+            await saveQueueItem(item, context);
         }
     }
 
     return queueItems;
 }
 
-async function createScheduleAndQueue(payload) {
+async function createScheduleAndQueue(payload, context = {}) {
     if (payload.platform !== 'linkedin') {
         throw new Error('Only linkedin schedules are supported.');
     }
 
-    const state = await readState();
+    const userId = String(context.userId || '').trim();
+    if (!userId) {
+        const error = new Error('Authenticated user context is required.');
+        error.statusCode = 401;
+        throw error;
+    }
+
+    const state = await readState({ userId });
     const account = state.accounts.find((item) => item.id === payload.accountId);
     if (!account) {
         throw new Error('Connected account not found.');
@@ -282,6 +286,7 @@ async function createScheduleAndQueue(payload) {
 
     const schedule = {
         id: createId('schedule'),
+        userId,
         platform: payload.platform,
         accountId: payload.accountId,
         companyName: payload.companyName,
@@ -305,14 +310,14 @@ async function createScheduleAndQueue(payload) {
         endDate: new Date(schedule.endDate)
     });
 
-    await saveSchedule(schedule);
-    await saveQueueItems(queueItems);
+    await saveSchedule(schedule, { userId });
+    await saveQueueItems(queueItems, { userId });
 
     return { schedule, queueItems };
 }
 
-async function publishQueueItem(queueItemId) {
-    const state = await readState();
+async function publishQueueItem(queueItemId, context = {}) {
+    const state = await readState(context);
     const queueItem = state.queue.find((item) => item.id === queueItemId);
 
     if (!queueItem) {
@@ -342,7 +347,7 @@ async function publishQueueItem(queueItemId) {
     await updateQueueItemStatus(queueItem.id, {
         status: queueItem.status,
         updatedAt: queueItem.updatedAt
-    });
+    }, context);
 
     try {
         if (!queueItem.content || queueItem.metadata?.contentStatus === 'pending_generation' || queueItem.content === PENDING_CONTENT_PLACEHOLDER) {
@@ -364,14 +369,15 @@ async function publishQueueItem(queueItemId) {
     }
 
     queueItem.updatedAt = new Date().toISOString();
-    await saveQueueItem(queueItem);
+    await saveQueueItem(queueItem, context);
     return queueItem;
 }
 
-async function publishDueQueueItems(options = {}) {
+async function publishDueQueueItems(options = {}, context = {}) {
     const limit = Number(options.limit || 20);
     const now = options.now ? new Date(options.now) : new Date();
-    const state = await readState();
+    const effectiveContext = resolveSchedulerContext(context);
+    const state = await readState(effectiveContext);
 
     const dueItems = state.queue
         .filter((item) =>
@@ -384,15 +390,27 @@ async function publishDueQueueItems(options = {}) {
 
     const items = [];
     for (const item of dueItems) {
-        items.push(await publishQueueItem(item.id));
+        items.push(await publishQueueItem(item.id, effectiveContext));
     }
 
     return {
         processedCount: items.length,
-        publishedCount: items.filter((item) => item.status === 'published').length,
-        failedCount: items.filter((item) => item.status === 'failed').length,
+        publishedCount: items.filter((entry) => entry.status === 'published').length,
+        failedCount: items.filter((entry) => entry.status === 'failed').length,
         items
     };
+}
+
+function resolveSchedulerContext(context = {}) {
+    if (context.scope === 'all') {
+        return context;
+    }
+
+    if (context.userId) {
+        return context;
+    }
+
+    return { scope: 'all' };
 }
 
 let schedulerStarted = false;
@@ -405,7 +423,7 @@ function startScheduler() {
     schedulerStarted = true;
     setInterval(async () => {
         try {
-            await publishDueQueueItems();
+            await publishDueQueueItems({}, { scope: 'all' });
         } catch (error) {
             console.error('Scheduler error:', error.message);
         }

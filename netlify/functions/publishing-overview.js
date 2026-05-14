@@ -1,5 +1,6 @@
 const { getLinkedInOverview } = require('../../services/publishingApi');
 const { json, handleOptions, methodNotAllowed } = require('./_lib/http');
+const { requireAuthenticatedUser, getUserContext } = require('./_lib/auth');
 
 exports.handler = async (event) => {
     const optionsResponse = handleOptions(event);
@@ -12,9 +13,15 @@ exports.handler = async (event) => {
     }
 
     try {
-        const overview = await getLinkedInOverview();
+        const user = await requireAuthenticatedUser(event);
+        const overview = await getLinkedInOverview(getUserContext(user));
         return json(200, { success: true, ...overview });
     } catch (error) {
-        return json(500, { success: false, error: 'Failed to load publishing overview', details: error.message });
+        const statusCode = error.statusCode || 500;
+        return json(statusCode, {
+            success: false,
+            error: statusCode === 401 ? error.message : 'Failed to load publishing overview',
+            details: statusCode === 401 ? undefined : error.message
+        });
     }
 };

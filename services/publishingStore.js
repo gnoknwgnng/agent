@@ -25,6 +25,28 @@ function cloneDefaultState() {
     return JSON.parse(JSON.stringify(defaultState));
 }
 
+function createUnauthorizedError(message = 'Authenticated user context is required.') {
+    const error = new Error(message);
+    error.statusCode = 401;
+    return error;
+}
+
+function resolveScope(context = {}) {
+    return context?.scope === 'all' ? 'all' : 'user';
+}
+
+function resolveUserId(context = {}) {
+    return String(context?.userId || '').trim();
+}
+
+function requireUserId(context = {}) {
+    const userId = resolveUserId(context);
+    if (!userId) {
+        throw createUnauthorizedError();
+    }
+    return userId;
+}
+
 function supabaseHeaders(prefer = '') {
     const headers = {
         apikey: SUPABASE_SERVICE_ROLE_KEY,
@@ -48,7 +70,9 @@ function createSupabaseError(error, table) {
         ? ` Table "${table}" does not exist yet. Run the SQL schema first.`
         : '';
 
-    return new Error(`Supabase request failed for ${table} (${status || 'n/a'}${code}): ${details}.${missingTableHint}`);
+    const wrapped = new Error(`Supabase request failed for ${table} (${status || 'n/a'}${code}): ${details}.${missingTableHint}`);
+    wrapped.statusCode = status || 500;
+    return wrapped;
 }
 
 function normalizeLinkedInState(state) {
@@ -69,9 +93,12 @@ function normalizeLinkedInState(state) {
     return { accounts, schedules, queue };
 }
 
-function toAccountRow(account) {
+function toAccountRow(account, context = {}) {
+    const userId = String(account.userId || resolveUserId(context) || '').trim();
+
     return {
         id: account.id,
+        user_id: userId || null,
         platform: 'linkedin',
         display_name: account.displayName || 'LinkedIn User',
         access_token: account.accessToken || '',
@@ -87,9 +114,12 @@ function toAccountRow(account) {
     };
 }
 
-function toScheduleRow(schedule) {
+function toScheduleRow(schedule, context = {}) {
+    const userId = String(schedule.userId || resolveUserId(context) || '').trim();
+
     return {
         id: schedule.id,
+        user_id: userId || null,
         platform: 'linkedin',
         account_id: schedule.accountId,
         company_name: schedule.companyName || '',
@@ -106,9 +136,12 @@ function toScheduleRow(schedule) {
     };
 }
 
-function toQueueRow(item) {
+function toQueueRow(item, context = {}) {
+    const userId = String(item.userId || resolveUserId(context) || '').trim();
+
     return {
         id: item.id,
+        user_id: userId || null,
         schedule_id: item.scheduleId,
         account_id: item.accountId,
         platform: 'linkedin',
@@ -129,6 +162,7 @@ function toQueueRow(item) {
 function fromAccountRow(row) {
     return {
         id: row.id,
+        userId: row.user_id || '',
         platform: row.platform,
         displayName: row.display_name || '',
         accessToken: row.access_token || '',
@@ -147,6 +181,7 @@ function fromAccountRow(row) {
 function fromScheduleRow(row) {
     return {
         id: row.id,
+        userId: row.user_id || '',
         platform: row.platform,
         accountId: row.account_id,
         companyName: row.company_name || '',
@@ -166,6 +201,7 @@ function fromScheduleRow(row) {
 function fromQueueRow(row) {
     return {
         id: row.id,
+        userId: row.user_id || '',
         scheduleId: row.schedule_id,
         accountId: row.account_id,
         platform: row.platform,
@@ -188,29 +224,69 @@ async function ensureStateFile() {
     try {
         await fs.access(statePath);
     } catch (error) {
-        await fs.writeFile(statePath, JSON.stringify(defaultState, null, 2), 'utf8');
+        await fs.writeFile(statePath, JSON.stringify({ users: {} }, null, 2), 'utf8');
     }
 }
 
-async function readLocalState() {
+function normalizeLocalContainer(parsed) {
+    if (parsed && typeof parsed === 'object' && parsed.users && typeof parsed.users === 'object') {
+        return parsed;
+    }
+
+    if (parsed && typeof parsed === 'object' && Array.isArray(parsed.accounts)) {
+        return {
+            users: {
+                shared: {
+                    accounts: parsed.accounts || [],
+                    schedules: parsed.schedules || [],
+                    queue: parsed.queue || []
+                }
+            }
+        };
+    }
+
+    return { users: {} };
+}
+
+async function readLocalContainer() {
     await ensureStateFile();
     const raw = await fs.readFile(statePath, 'utf8');
+
     try {
-        const parsed = JSON.parse(raw);
-        return {
-            accounts: parsed.accounts || [],
-            schedules: parsed.schedules || [],
-            queue: parsed.queue || []
-        };
+        return normalizeLocalContainer(JSON.parse(raw));
     } catch (error) {
-        return cloneDefaultState();
+        return { users: {} };
     }
 }
 
-async function writeLocalState(state) {
+async function writeLocalContainer(container) {
     await ensureStateFile();
-    await fs.writeFile(statePath, JSON.stringify(state, null, 2), 'utf8');
-    return state;
+    await fs.writeFile(statePath, JSON.stringify(container, null, 2), 'utf8');
+}
+
+function localUserKey(context = {}) {
+    const userId = resolveUserId(context);
+    return userId || 'shared';
+}
+
+async function readLocalState(context = {}) {
+    const container = await readLocalContainer();
+    const key = localUserKey(context);
+    const state = container.users[key] || cloneDefaultState();
+
+    return {
+        accounts: state.accounts || [],
+        schedules: state.schedules || [],
+        queue: state.queue || []
+    };
+}
+
+async function writeLocalState(state, context = {}) {
+    const container = await readLocalContainer();
+    const key = localUserKey(context);
+    container.users[key] = normalizeLinkedInState(state);
+    await writeLocalContainer(container);
+    return container.users[key];
 }
 
 function toInFilter(ids) {
@@ -231,13 +307,25 @@ function upsertRecord(list, record) {
     list.push(record);
 }
 
-async function fetchSupabaseRows(table, orderColumn) {
+function buildUserFilterParams(params = {}, context = {}) {
+    if (resolveScope(context) === 'all') {
+        return params;
+    }
+
+    const userId = requireUserId(context);
+    return {
+        ...params,
+        user_id: `eq.${userId}`
+    };
+}
+
+async function fetchSupabaseRows(table, orderColumn, context = {}) {
     try {
         const response = await axios.get(`${SUPABASE_REST_BASE}/${table}`, {
-            params: {
+            params: buildUserFilterParams({
                 select: '*',
                 order: `${orderColumn}.asc`
-            },
+            }, context),
             headers: supabaseHeaders()
         });
         return response.data || [];
@@ -246,10 +334,10 @@ async function fetchSupabaseRows(table, orderColumn) {
     }
 }
 
-async function fetchSupabaseIds(table) {
+async function fetchSupabaseIds(table, context = {}) {
     try {
         const response = await axios.get(`${SUPABASE_REST_BASE}/${table}`, {
-            params: { select: 'id' },
+            params: buildUserFilterParams({ select: 'id' }, context),
             headers: supabaseHeaders()
         });
         return (response.data || []).map((row) => row.id);
@@ -273,7 +361,7 @@ async function upsertSupabaseRows(table, rows) {
     }
 }
 
-async function deleteSupabaseRowsById(table, ids) {
+async function deleteSupabaseRowsById(table, ids, context = {}) {
     if (!ids.length) {
         return;
     }
@@ -283,7 +371,7 @@ async function deleteSupabaseRowsById(table, ids) {
         const chunk = ids.slice(index, index + chunkSize);
         try {
             await axios.delete(`${SUPABASE_REST_BASE}/${table}`, {
-                params: { id: toInFilter(chunk) },
+                params: buildUserFilterParams({ id: toInFilter(chunk) }, context),
                 headers: supabaseHeaders('return=minimal')
             });
         } catch (error) {
@@ -292,12 +380,10 @@ async function deleteSupabaseRowsById(table, ids) {
     }
 }
 
-async function patchSupabaseRows(table, filters, patch) {
+async function patchSupabaseRows(table, filters, patch, context = {}) {
     try {
         await axios.patch(`${SUPABASE_REST_BASE}/${table}`, patch, {
-            params: {
-                ...filters
-            },
+            params: buildUserFilterParams({ ...filters }, context),
             headers: supabaseHeaders('return=minimal')
         });
     } catch (error) {
@@ -305,11 +391,11 @@ async function patchSupabaseRows(table, filters, patch) {
     }
 }
 
-async function readSupabaseState() {
+async function readSupabaseState(context = {}) {
     const [accountRows, scheduleRows, queueRows] = await Promise.all([
-        fetchSupabaseRows('accounts', 'created_at'),
-        fetchSupabaseRows('schedules', 'created_at'),
-        fetchSupabaseRows('queue_items', 'created_at')
+        fetchSupabaseRows('accounts', 'created_at', context),
+        fetchSupabaseRows('schedules', 'created_at', context),
+        fetchSupabaseRows('queue_items', 'created_at', context)
     ]);
 
     return {
@@ -319,16 +405,16 @@ async function readSupabaseState() {
     };
 }
 
-async function writeSupabaseState(state) {
+async function writeSupabaseState(state, context = {}) {
     const normalized = normalizeLinkedInState(state);
-    const accountRows = normalized.accounts.map(toAccountRow);
-    const scheduleRows = normalized.schedules.map(toScheduleRow);
-    const queueRows = normalized.queue.map(toQueueRow);
+    const accountRows = normalized.accounts.map((row) => toAccountRow(row, context));
+    const scheduleRows = normalized.schedules.map((row) => toScheduleRow(row, context));
+    const queueRows = normalized.queue.map((row) => toQueueRow(row, context));
 
     const [existingAccountIds, existingScheduleIds, existingQueueIds] = await Promise.all([
-        fetchSupabaseIds('accounts'),
-        fetchSupabaseIds('schedules'),
-        fetchSupabaseIds('queue_items')
+        fetchSupabaseIds('accounts', context),
+        fetchSupabaseIds('schedules', context),
+        fetchSupabaseIds('queue_items', context)
     ]);
 
     await upsertSupabaseRows('accounts', accountRows);
@@ -339,160 +425,156 @@ async function writeSupabaseState(state) {
     const scheduleIdsSet = new Set(scheduleRows.map((row) => row.id));
     const queueIdsSet = new Set(queueRows.map((row) => row.id));
 
-    await deleteSupabaseRowsById('queue_items', difference(existingQueueIds, queueIdsSet));
-    await deleteSupabaseRowsById('schedules', difference(existingScheduleIds, scheduleIdsSet));
-    await deleteSupabaseRowsById('accounts', difference(existingAccountIds, accountIdsSet));
+    await deleteSupabaseRowsById('queue_items', difference(existingQueueIds, queueIdsSet), context);
+    await deleteSupabaseRowsById('schedules', difference(existingScheduleIds, scheduleIdsSet), context);
+    await deleteSupabaseRowsById('accounts', difference(existingAccountIds, accountIdsSet), context);
 
     return normalized;
 }
 
-async function readState() {
+async function readState(context = {}) {
     if (isSupabaseEnabled) {
-        return readSupabaseState();
+        return readSupabaseState(context);
     }
-    return readLocalState();
+    return readLocalState(context);
 }
 
-async function writeState(state) {
+async function writeState(state, context = {}) {
     if (isSupabaseEnabled) {
-        return writeSupabaseState(state);
+        return writeSupabaseState(state, context);
     }
-    return writeLocalState(state);
+    return writeLocalState(state, context);
 }
 
-async function saveAccount(account) {
+async function saveAccount(account, context = {}) {
     if (isSupabaseEnabled) {
-        await upsertSupabaseRows('accounts', [toAccountRow(account)]);
-        return account;
+        const row = toAccountRow(account, context);
+        if (!row.user_id) {
+            throw createUnauthorizedError();
+        }
+
+        await upsertSupabaseRows('accounts', [row]);
+        return { ...account, userId: row.user_id };
     }
 
-    const state = await readLocalState();
+    const state = await readLocalState(context);
     upsertRecord(state.accounts, account);
-    await writeLocalState(state);
+    await writeLocalState(state, context);
     return account;
 }
 
-async function saveSchedule(schedule) {
+async function saveSchedule(schedule, context = {}) {
     if (isSupabaseEnabled) {
-        await upsertSupabaseRows('schedules', [toScheduleRow(schedule)]);
-        return schedule;
+        const row = toScheduleRow(schedule, context);
+        if (!row.user_id) {
+            throw createUnauthorizedError();
+        }
+
+        await upsertSupabaseRows('schedules', [row]);
+        return { ...schedule, userId: row.user_id };
     }
 
-    const state = await readLocalState();
+    const state = await readLocalState(context);
     upsertRecord(state.schedules, schedule);
-    await writeLocalState(state);
+    await writeLocalState(state, context);
     return schedule;
 }
 
-async function saveQueueItems(queueItems) {
+async function saveQueueItems(queueItems, context = {}) {
     if (!Array.isArray(queueItems) || !queueItems.length) {
         return [];
     }
 
     if (isSupabaseEnabled) {
-        await upsertSupabaseRows('queue_items', queueItems.map(toQueueRow));
-        return queueItems;
+        const rows = queueItems.map((item) => toQueueRow(item, context));
+        const hasMissingUser = rows.some((row) => !row.user_id);
+        if (hasMissingUser) {
+            throw createUnauthorizedError();
+        }
+
+        await upsertSupabaseRows('queue_items', rows);
+        return queueItems.map((item, index) => ({ ...item, userId: rows[index].user_id }));
     }
 
-    const state = await readLocalState();
+    const state = await readLocalState(context);
     queueItems.forEach((item) => upsertRecord(state.queue, item));
-    await writeLocalState(state);
+    await writeLocalState(state, context);
     return queueItems;
 }
 
-async function saveQueueItem(queueItem) {
-    await saveQueueItems([queueItem]);
-    return queueItem;
+async function saveQueueItem(queueItem, context = {}) {
+    const [saved] = await saveQueueItems([queueItem], context);
+    return saved;
 }
 
-async function updateQueueItemStatus(queueItemId, patch) {
+function buildQueueUpdatePayload(patch) {
+    const updatePayload = {};
+
+    if (Object.prototype.hasOwnProperty.call(patch, 'status')) {
+        updatePayload.status = patch.status;
+    }
+    if (Object.prototype.hasOwnProperty.call(patch, 'updatedAt')) {
+        updatePayload.updated_at = patch.updatedAt;
+    }
+    if (Object.prototype.hasOwnProperty.call(patch, 'publishedAt')) {
+        updatePayload.published_at = patch.publishedAt;
+    }
+    if (Object.prototype.hasOwnProperty.call(patch, 'providerId')) {
+        updatePayload.provider_id = patch.providerId;
+    }
+    if (Object.prototype.hasOwnProperty.call(patch, 'providerResponse')) {
+        updatePayload.provider_response = patch.providerResponse;
+    }
+    if (Object.prototype.hasOwnProperty.call(patch, 'error')) {
+        updatePayload.error = patch.error;
+    }
+    if (Object.prototype.hasOwnProperty.call(patch, 'errorStatus')) {
+        updatePayload.error_status = patch.errorStatus;
+    }
+    if (Object.prototype.hasOwnProperty.call(patch, 'content')) {
+        updatePayload.content = patch.content;
+    }
+    if (Object.prototype.hasOwnProperty.call(patch, 'metadata')) {
+        updatePayload.metadata = patch.metadata;
+    }
+    if (Object.prototype.hasOwnProperty.call(patch, 'scheduledFor')) {
+        updatePayload.scheduled_for = patch.scheduledFor;
+    }
+
+    return updatePayload;
+}
+
+async function updateQueueItemStatus(queueItemId, patch, context = {}) {
     if (isSupabaseEnabled) {
-        const updatePayload = {};
-
-        if (Object.prototype.hasOwnProperty.call(patch, 'status')) {
-            updatePayload.status = patch.status;
-        }
-        if (Object.prototype.hasOwnProperty.call(patch, 'updatedAt')) {
-            updatePayload.updated_at = patch.updatedAt;
-        }
-        if (Object.prototype.hasOwnProperty.call(patch, 'publishedAt')) {
-            updatePayload.published_at = patch.publishedAt;
-        }
-        if (Object.prototype.hasOwnProperty.call(patch, 'providerId')) {
-            updatePayload.provider_id = patch.providerId;
-        }
-        if (Object.prototype.hasOwnProperty.call(patch, 'providerResponse')) {
-            updatePayload.provider_response = patch.providerResponse;
-        }
-        if (Object.prototype.hasOwnProperty.call(patch, 'error')) {
-            updatePayload.error = patch.error;
-        }
-        if (Object.prototype.hasOwnProperty.call(patch, 'errorStatus')) {
-            updatePayload.error_status = patch.errorStatus;
-        }
-
-        await patchSupabaseRows('queue_items', { id: `eq.${queueItemId}` }, updatePayload);
+        await patchSupabaseRows('queue_items', { id: `eq.${queueItemId}` }, buildQueueUpdatePayload(patch), context);
         return queueItemId;
     }
 
-    const state = await readLocalState();
+    const state = await readLocalState(context);
     const queueItem = state.queue.find((item) => item.id === queueItemId);
     if (!queueItem) {
         return null;
     }
 
     Object.assign(queueItem, patch);
-    await writeLocalState(state);
+    await writeLocalState(state, context);
     return queueItem;
 }
 
-async function updateQueueItem(queueItemId, patch) {
+async function updateQueueItem(queueItemId, patch, context = {}) {
     if (isSupabaseEnabled) {
-        const updatePayload = {};
-
-        if (Object.prototype.hasOwnProperty.call(patch, 'status')) {
-            updatePayload.status = patch.status;
-        }
-        if (Object.prototype.hasOwnProperty.call(patch, 'updatedAt')) {
-            updatePayload.updated_at = patch.updatedAt;
-        }
-        if (Object.prototype.hasOwnProperty.call(patch, 'publishedAt')) {
-            updatePayload.published_at = patch.publishedAt;
-        }
-        if (Object.prototype.hasOwnProperty.call(patch, 'providerId')) {
-            updatePayload.provider_id = patch.providerId;
-        }
-        if (Object.prototype.hasOwnProperty.call(patch, 'providerResponse')) {
-            updatePayload.provider_response = patch.providerResponse;
-        }
-        if (Object.prototype.hasOwnProperty.call(patch, 'error')) {
-            updatePayload.error = patch.error;
-        }
-        if (Object.prototype.hasOwnProperty.call(patch, 'errorStatus')) {
-            updatePayload.error_status = patch.errorStatus;
-        }
-        if (Object.prototype.hasOwnProperty.call(patch, 'content')) {
-            updatePayload.content = patch.content;
-        }
-        if (Object.prototype.hasOwnProperty.call(patch, 'metadata')) {
-            updatePayload.metadata = patch.metadata;
-        }
-        if (Object.prototype.hasOwnProperty.call(patch, 'scheduledFor')) {
-            updatePayload.scheduled_for = patch.scheduledFor;
-        }
-
-        await patchSupabaseRows('queue_items', { id: `eq.${queueItemId}` }, updatePayload);
+        await patchSupabaseRows('queue_items', { id: `eq.${queueItemId}` }, buildQueueUpdatePayload(patch), context);
         return queueItemId;
     }
 
-    const state = await readLocalState();
+    const state = await readLocalState(context);
     const queueItem = state.queue.find((item) => item.id === queueItemId);
     if (!queueItem) {
         return null;
     }
 
     Object.assign(queueItem, patch);
-    await writeLocalState(state);
+    await writeLocalState(state, context);
     return queueItem;
 }
 

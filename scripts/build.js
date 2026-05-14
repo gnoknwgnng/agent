@@ -5,6 +5,7 @@ const requiredPaths = [
     path.join(__dirname, '..', 'public', 'index.html'),
     path.join(__dirname, '..', 'public', 'generator.html'),
     path.join(__dirname, '..', 'public', 'publisher.html'),
+    path.join(__dirname, '..', 'netlify', 'functions', 'auth-config.js'),
     path.join(__dirname, '..', 'netlify', 'functions', 'generate.js'),
     path.join(__dirname, '..', 'netlify', 'functions', 'improve-post.js'),
     path.join(__dirname, '..', 'netlify', 'functions', 'publishing-overview.js'),

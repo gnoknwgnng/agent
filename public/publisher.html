@@ -332,12 +332,54 @@
             gap: 0.7rem;
             flex-wrap: wrap;
         }
+        .auth-card {
+            display: grid;
+            gap: 0.7rem;
+            padding: 0.95rem;
+            border-radius: 16px;
+            border: 1px solid rgba(255,255,255,0.12);
+            background: rgba(5, 12, 34, 0.52);
+            margin-bottom: 0.85rem;
+        }
+        .auth-row {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 0.7rem;
+        }
+        .auth-actions {
+            display: flex;
+            gap: 0.6rem;
+            flex-wrap: wrap;
+        }
+        .auth-status {
+            font-size: 0.92rem;
+            color: rgba(208, 223, 255, 0.92);
+        }
+        .auth-session {
+            font-size: 0.85rem;
+            color: rgba(156, 179, 230, 0.94);
+        }
+        .small-btn {
+            padding: 0.55rem 0.95rem;
+            border-radius: 10px;
+            border: 1px solid rgba(255,255,255,0.14);
+            background: rgba(255,255,255,0.08);
+            color: #fff;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .small-btn.primary {
+            background: linear-gradient(135deg, #22d3ee, #3b82f6);
+            color: #0b1022;
+            border-color: rgba(160, 244, 255, 0.58);
+        }
         @media (max-width: 960px) {
             .span-4, .span-5, .span-7, .span-12 { grid-column: span 12; }
             .row-2 { grid-template-columns: 1fr; }
             .queue-metrics { grid-template-columns: 1fr; }
         }
-    </style>
+</style>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
     <div class="container">
@@ -361,6 +403,23 @@
             <section class="card span-5">
                 <h2>Connect Accounts</h2>
                 <p>Use LinkedIn login to connect the account that should be used for scheduling and publishing.</p>
+                <div class="auth-card">
+                    <div class="auth-status" id="authStatus">Loading secure sign-in...</div>
+                    <div class="auth-session" id="authSessionLabel">No active session.</div>
+                    <div class="auth-row">
+                        <label>Email
+                            <input type="email" id="authEmail" placeholder="you@company.com">
+                        </label>
+                        <label>Password
+                            <input type="password" id="authPassword" placeholder="At least 6 characters">
+                        </label>
+                    </div>
+                    <div class="auth-actions">
+                        <button type="button" class="small-btn primary" id="signInBtn">Sign In</button>
+                        <button type="button" class="small-btn" id="signUpBtn">Sign Up</button>
+                        <button type="button" class="small-btn" id="signOutBtn">Sign Out</button>
+                    </div>
+                </div>
                 <div class="oauth-card">
                     <h3>LinkedIn Login</h3>
                     <div class="oauth-status" id="linkedinOAuthStatus">Checking LinkedIn OAuth configuration...</div>
@@ -464,6 +523,7 @@
 
     <script>
         const apiEndpoints = {
+            authConfig: '/.netlify/functions/auth-config',
             countries: '/.netlify/functions/countries',
             publishingOverview: '/.netlify/functions/publishing-overview',
             publishingProviders: '/.netlify/functions/publishing-providers',
@@ -480,6 +540,13 @@
         const endDateInput = document.getElementById('endDate');
         const countryCodeSelect = document.getElementById('countryCodeSelect');
         const oauthBanner = document.getElementById('oauthBanner');
+        const authStatus = document.getElementById('authStatus');
+        const authSessionLabel = document.getElementById('authSessionLabel');
+        const authEmailInput = document.getElementById('authEmail');
+        const authPasswordInput = document.getElementById('authPassword');
+        const signInBtn = document.getElementById('signInBtn');
+        const signUpBtn = document.getElementById('signUpBtn');
+        const signOutBtn = document.getElementById('signOutBtn');
         const linkedinOAuthStatus = document.getElementById('linkedinOAuthStatus');
         const linkedinLoginBtn = document.getElementById('linkedinLoginBtn');
         const queueEditorModal = document.getElementById('queueEditorModal');
@@ -491,6 +558,8 @@
         let allAccounts = [];
         let currentQueue = [];
         let editingQueueItemId = '';
+        let supabaseClient = null;
+        let activeSession = null;
 
         linkedinLoginBtn.href = apiEndpoints.linkedInLogin;
 
@@ -500,6 +569,58 @@
 
         startDateInput.value = today.toISOString().split('T')[0];
         endDateInput.value = defaultEndDate.toISOString().split('T')[0];
+
+        function updateLinkedInLoginHref() {
+            if (!activeSession?.access_token) {
+                linkedinLoginBtn.href = apiEndpoints.linkedInLogin;
+                return;
+            }
+
+            const params = new URLSearchParams({
+                access_token: activeSession.access_token
+            });
+            linkedinLoginBtn.href = `${apiEndpoints.linkedInLogin}?${params.toString()}`;
+        }
+
+        function setAuthStatus(message, isError = false) {
+            authStatus.textContent = message;
+            authStatus.style.color = isError ? '#fecaca' : 'rgba(208, 223, 255, 0.92)';
+        }
+
+        function setProtectedUiEnabled(isEnabled) {
+            scheduleForm.querySelectorAll('input, select, textarea, button').forEach((element) => {
+                if (element === signInBtn || element === signUpBtn || element === signOutBtn) {
+                    return;
+                }
+                element.disabled = !isEnabled;
+            });
+
+            linkedinLoginBtn.style.pointerEvents = isEnabled ? 'auto' : 'none';
+            linkedinLoginBtn.style.opacity = isEnabled ? '1' : '0.55';
+        }
+
+        function setSessionState(session) {
+            activeSession = session || null;
+            const userEmail = activeSession?.user?.email || '';
+            authSessionLabel.textContent = userEmail
+                ? `Signed in as ${userEmail}`
+                : 'No active session.';
+
+            signOutBtn.disabled = !activeSession;
+            setProtectedUiEnabled(Boolean(activeSession));
+            updateLinkedInLoginHref();
+        }
+
+        async function createAuthorizedHeaders(extraHeaders = {}) {
+            if (!activeSession?.access_token) {
+                throw new Error('Please sign in before using publishing features.');
+            }
+
+            return {
+                ...extraHeaders,
+                Authorization: `Bearer ${activeSession.access_token}`
+            };
+        }
 
         function showOAuthBanner(message, isError = false) {
             oauthBanner.style.display = 'block';
@@ -529,6 +650,21 @@
 
                 throw new Error('The server returned an invalid response.');
             }
+        }
+
+        async function authFetch(url, options = {}) {
+            const headers = await createAuthorizedHeaders(options.headers || {});
+            const response = await fetch(url, {
+                ...options,
+                headers
+            });
+
+            if (response.status === 401) {
+                setAuthStatus('Session expired. Please sign in again.', true);
+                setSessionState(null);
+            }
+
+            return response;
         }
 
         async function loadCountryOptions() {
@@ -571,7 +707,7 @@
 
         async function loadProviderStatus() {
             try {
-                const response = await fetch(apiEndpoints.publishingProviders);
+                const response = await authFetch(apiEndpoints.publishingProviders);
                 const result = await readJsonResponse(response);
                 const linkedIn = result.providers?.linkedin;
 
@@ -587,6 +723,106 @@
             } catch (error) {
                 linkedinOAuthStatus.textContent = 'Could not verify LinkedIn OAuth configuration right now.';
             }
+        }
+
+        async function initSupabaseAuth() {
+            try {
+                setAuthStatus('Loading secure sign-in...');
+                const response = await fetch(apiEndpoints.authConfig);
+                const config = await readJsonResponse(response);
+
+                if (!config.success || !config.supabaseUrl || !config.supabaseAnonKey) {
+                    throw new Error(config.error || 'Supabase Auth is not configured.');
+                }
+
+                if (!window.supabase?.createClient) {
+                    throw new Error('Supabase client library failed to load.');
+                }
+
+                supabaseClient = window.supabase.createClient(config.supabaseUrl, config.supabaseAnonKey, {
+                    auth: {
+                        persistSession: true,
+                        autoRefreshToken: true,
+                        detectSessionInUrl: true
+                    }
+                });
+
+                const sessionResult = await supabaseClient.auth.getSession();
+                setSessionState(sessionResult.data?.session || null);
+
+                supabaseClient.auth.onAuthStateChange((_event, session) => {
+                    setSessionState(session || null);
+                });
+
+                setAuthStatus(activeSession ? 'Signed in. Publishing data is private to this account.' : 'Sign in to access private publishing data.');
+            } catch (error) {
+                setSessionState(null);
+                setAuthStatus(error.message || 'Failed to initialize auth.', true);
+            }
+        }
+
+        async function signInWithPassword() {
+            const email = String(authEmailInput.value || '').trim();
+            const password = String(authPasswordInput.value || '');
+
+            if (!email || !password) {
+                setAuthStatus('Enter email and password to sign in.', true);
+                return;
+            }
+
+            setAuthStatus('Signing in...');
+            const result = await supabaseClient.auth.signInWithPassword({ email, password });
+            if (result.error) {
+                setAuthStatus(result.error.message || 'Sign in failed.', true);
+                return;
+            }
+
+            setSessionState(result.data?.session || null);
+            setAuthStatus('Signed in successfully.');
+            await loadProviderStatus();
+            await refreshOverview();
+        }
+
+        async function signUpWithPassword() {
+            const email = String(authEmailInput.value || '').trim();
+            const password = String(authPasswordInput.value || '');
+
+            if (!email || !password || password.length < 6) {
+                setAuthStatus('Use a valid email and a password with at least 6 characters.', true);
+                return;
+            }
+
+            setAuthStatus('Creating account...');
+            const result = await supabaseClient.auth.signUp({ email, password });
+            if (result.error) {
+                setAuthStatus(result.error.message || 'Sign up failed.', true);
+                return;
+            }
+
+            if (result.data?.session) {
+                setSessionState(result.data.session);
+                setAuthStatus('Account created and signed in.');
+                await loadProviderStatus();
+                await refreshOverview();
+                return;
+            }
+
+            setAuthStatus('Account created. Check your email confirmation settings, then sign in.');
+        }
+
+        async function signOut() {
+            if (!supabaseClient) {
+                return;
+            }
+
+            await supabaseClient.auth.signOut();
+            setSessionState(null);
+            allAccounts = [];
+            currentQueue = [];
+            document.getElementById('accountsList').innerHTML = '<div class=\"meta\">Sign in to view accounts.</div>';
+            document.getElementById('schedulesList').innerHTML = '<div class=\"meta\">Sign in to view schedules.</div>';
+            document.getElementById('queueList').innerHTML = '<div class=\"meta\">Sign in to view queue items.</div>';
+            setAuthStatus('Signed out.');
         }
 
         function handleOAuthResult() {
@@ -613,7 +849,7 @@
         }
 
         async function fetchOverview() {
-            const response = await fetch(apiEndpoints.publishingOverview);
+            const response = await authFetch(apiEndpoints.publishingOverview);
             return readJsonResponse(response);
         }
 
@@ -799,6 +1035,13 @@
         }
 
         async function refreshOverview() {
+            if (!activeSession) {
+                renderAccounts([]);
+                renderSchedules([]);
+                renderQueue([]);
+                return;
+            }
+
             const overview = await fetchOverview();
             renderAccounts(overview.accounts || []);
             renderSchedules(overview.schedules || []);
@@ -817,7 +1060,7 @@
             try {
                 const response = await fetch(apiEndpoints.publishingSchedules, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: await createAuthorizedHeaders({ 'Content-Type': 'application/json' }),
                     body: JSON.stringify(data)
                 });
                 const result = await readJsonResponse(response);
@@ -833,7 +1076,7 @@
 
         async function publishNow(queueItemId) {
             try {
-                const response = await fetch(apiEndpoints.publishQueueItem(queueItemId), {
+                const response = await authFetch(apiEndpoints.publishQueueItem(queueItemId), {
                     method: 'POST'
                 });
                 const result = await readJsonResponse(response);
@@ -884,7 +1127,7 @@
             queueEditorSave.textContent = 'Saving...';
 
             try {
-                const response = await fetch(apiEndpoints.updateQueueItem(editingQueueItemId), {
+                const response = await authFetch(apiEndpoints.updateQueueItem(editingQueueItemId), {
                     method: 'PATCH',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ content: nextContent })
@@ -943,6 +1186,46 @@
         window.openQueueEditor = openQueueEditor;
         window.copyQueueItem = copyQueueItem;
         schedulePlatformSelect.addEventListener('change', updateAccountOptions);
+        signInBtn.addEventListener('click', async () => {
+            if (!supabaseClient) {
+                setAuthStatus('Auth is not initialized yet.', true);
+                return;
+            }
+
+            signInBtn.disabled = true;
+            try {
+                await signInWithPassword();
+            } catch (error) {
+                setAuthStatus(error.message || 'Sign in failed.', true);
+            } finally {
+                signInBtn.disabled = false;
+            }
+        });
+        signUpBtn.addEventListener('click', async () => {
+            if (!supabaseClient) {
+                setAuthStatus('Auth is not initialized yet.', true);
+                return;
+            }
+
+            signUpBtn.disabled = true;
+            try {
+                await signUpWithPassword();
+            } catch (error) {
+                setAuthStatus(error.message || 'Sign up failed.', true);
+            } finally {
+                signUpBtn.disabled = false;
+            }
+        });
+        signOutBtn.addEventListener('click', async () => {
+            signOutBtn.disabled = true;
+            try {
+                await signOut();
+            } catch (error) {
+                setAuthStatus(error.message || 'Sign out failed.', true);
+            } finally {
+                signOutBtn.disabled = false;
+            }
+        });
         queueEditorClose.addEventListener('click', closeQueueEditor);
         queueEditorCancel.addEventListener('click', closeQueueEditor);
         queueEditorSave.addEventListener('click', saveQueueEdit);
@@ -951,10 +1234,22 @@
                 closeQueueEditor();
             }
         });
+
+        setProtectedUiEnabled(false);
+        setSessionState(null);
         handleOAuthResult();
         loadCountryOptions();
-        loadProviderStatus();
-        refreshOverview();
+        initSupabaseAuth().then(async () => {
+            if (activeSession) {
+                await loadProviderStatus();
+                await refreshOverview();
+            } else {
+                linkedinOAuthStatus.textContent = 'Sign in first to check LinkedIn OAuth status.';
+                renderAccounts([]);
+                renderSchedules([]);
+                renderQueue([]);
+            }
+        });
     </script>
 </body>
 </html>

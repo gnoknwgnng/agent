@@ -1,5 +1,6 @@
 const { getLinkedInQueue } = require('../../services/publishingApi');
 const { json, handleOptions, methodNotAllowed } = require('./_lib/http');
+const { requireAuthenticatedUser, getUserContext } = require('./_lib/auth');
 
 exports.handler = async (event) => {
     const optionsResponse = handleOptions(event);
@@ -12,9 +13,15 @@ exports.handler = async (event) => {
     }
 
     try {
-        const queue = await getLinkedInQueue();
+        const user = await requireAuthenticatedUser(event);
+        const queue = await getLinkedInQueue(getUserContext(user));
         return json(200, { success: true, queue });
     } catch (error) {
-        return json(500, { success: false, error: 'Failed to load queue', details: error.message });
+        const statusCode = error.statusCode || 500;
+        return json(statusCode, {
+            success: false,
+            error: statusCode === 401 ? error.message : 'Failed to load queue',
+            details: statusCode === 401 ? undefined : error.message
+        });
     }
 };
